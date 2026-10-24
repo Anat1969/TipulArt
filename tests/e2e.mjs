@@ -159,13 +159,16 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   await page.screenshot({ path: OUT + 'home-desktop-0.png' })
 
   // כפתורי מערכת מתחת ללוגו
-  const logo = await page.locator('.brand').boundingBox()
-  const sys = await page.locator('.sys-buttons').boundingBox()
-  ok(sys.y >= logo.y + logo.height - 1, 'כפתורי המערכת מתחת ללוגו')
+  const inLogo = await page.evaluate(() => {
+    const logo = document.querySelector('[data-testid=anat-logo]')
+    return ['copy-link', 'dev-chat', 'research', 'auth-btn'].every((id) => logo?.contains(document.querySelector(`[data-testid=${id}]`)))
+  })
+  ok(inLogo, 'כפתורי המערכת והכניסה בתוך הלוגו של ענת')
+  ok((await page.locator('[data-testid=anat-logo]').innerText()).includes("אד' ענת שטיבלמן"), 'הלוגו של ענת מוצג')
   const radius = await page.locator('[data-testid=copy-link]').evaluate((el) => getComputedStyle(el).borderRadius)
   ok(radius === '0px', `כפתורים מרובעים (border-radius ${radius})`)
   ok((await page.locator('[data-testid=dev-chat]').getAttribute('href')).includes('claude.ai/code/session_'), 'שיחת הפיתוח מקשרת לשיחה')
-  ok((await page.locator('[data-testid=research]').getAttribute('aria-disabled')) === 'true', 'פרויקט המחקר מסומן כ־placeholder')
+  ok((await page.locator('[data-testid=research]').getAttribute('href')) === 'https://claude.ai/chat/61b5f6c0-8394-4c37-a232-4fed2c479392', 'פרויקט המחקר מקשר לפרויקט')
 
   for (const id of ['vision', 'goal', 'tools', 'results']) {
     await page.locator(`#${id}`).scrollIntoViewIfNeeded()
@@ -214,7 +217,7 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
 
   await page.getByRole('link', { name: 'מתכנן מפגש' }).click()
   ok(await page.waitForSelector('text=האזור הזה אישי', { timeout: 5000 }).then(() => true, () => false), 'מתכנן ללא כניסה מציג הסבר וכניסה')
-  await page.locator('.account').getByRole('link', { name: 'כניסה' }).click()
+  await page.locator('[data-testid=auth-btn]').click()
   ok(await page.waitForSelector('input[type=password]', { timeout: 5000 }).then(() => true, () => false), 'דף כניסה עם אימייל וסיסמה')
   ok(await page.getByText('כניסה עם Google').count() === 0, 'Google כבוי: הכפתור מוסתר')
 
@@ -291,7 +294,7 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   ok((await page.locator('[data-testid=practice]').innerText()) === 'תרגלתי', 'כפתור התרגול מתעדכן')
 
   await page.getByRole('button', { name: 'יציאה' }).click()
-  await page.waitForSelector('.account >> text=כניסה')
+  await page.waitForSelector('[data-testid=auth-btn]:has-text("כניסה")')
   ok(true, 'יציאה מחזירה כפתור כניסה')
   ok(errors.length === 0, `אין שגיאות דף ${errors.join(' | ')}`)
   await context.close()
