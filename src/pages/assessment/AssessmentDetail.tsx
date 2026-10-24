@@ -98,7 +98,7 @@ function DetailInner() {
         kicker={`הערכה מובנית · ${new Date(a.created_at).toLocaleDateString('he-IL')} · ${a.mode === 'photo' ? 'צילום מנייר' : 'סטודיו'} · ${final ? 'חתום' : 'טיוטה'}`}
         title={ppat ? PPAT.name : 'ציור חופשי'}
       >
-        שלוש שכבות: מדידה ממוחשבת, טיוטת דירוג, ודירוג שלך. רק הדירוג שלך נחתם ונכנס לציר הזמן.
+        שלוש שכבות: מדידה ממוחשבת, טיוטת דירוג, ודירוג שלך. **רק הדירוג שלך נחתם ונכנס לציר הזמן.**
       </PageHeader>
 
       <div className="grid grid-2" style={{ marginBottom: 'var(--s5)' }}>

@@ -42,7 +42,7 @@ function TimelineInner() {
     <div className="page">
       <Link to="/clients" className="label" style={{ textDecoration: 'none' }}>מטופלים /</Link>
       <PageHeader kicker={[client.population, client.goals].filter(Boolean).join(' · ') || 'ציר זמן'} title={client.code}>
-        {sessions.length} מפגשים. כל נקודה היא מפגש, וכל משבצת צבעונית היא רמת ETC שנצפתה בו.
+        {`**${sessions.length} מפגשים.** כל נקודה היא מפגש, וכל משבצת צבעונית היא רמת ETC שנצפתה בו.`}
       </PageHeader>
 
       <div className="row" style={{ marginBottom: 'var(--s4)' }}>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Rich } from '../components/Rich'
 import { Link, useParams } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
 import { EVIDENCE_LABELS, techniqueById } from '../content/techniques'
@@ -51,7 +52,7 @@ export default function Technique() {
         <div className="panel">
           <div className="label">רמת ETC</div>
           {t.etc.map((e) => (
-            <p key={e} style={{ margin: '8px 0 0' }}>
+            <p key={e} className="value" style={{ margin: '8px 0 0' }}>
               <span className="etc-mark" style={{ background: etcById(e)?.color, marginInlineEnd: 8 }} />
               {etcById(e)?.label}
             </p>
@@ -59,12 +60,12 @@ export default function Technique() {
         </div>
         <div className="panel">
           <div className="label">אוכלוסיות ומטרות</div>
-          <p style={{ margin: '8px 0 0' }}>{t.populations.join(', ')}</p>
+          <p className="value" style={{ margin: '8px 0 0' }}>{t.populations.join(', ')}</p>
           <p className="muted" style={{ margin: '4px 0 0' }}>{t.goals.map((g) => goalById(g)?.label).join(', ')}</p>
         </div>
         <div className="panel" style={{ borderTop: '3px solid var(--ochre)' }}>
           <div className="label">רמת ראיות</div>
-          <p style={{ margin: '8px 0 4px', fontWeight: 500 }}>{ev.label}</p>
+          <p className="value" style={{ margin: '8px 0 4px' }}>{ev.label}</p>
           <p className="muted" style={{ margin: 0, fontSize: 14 }}>{ev.note}</p>
         </div>
       </div>
@@ -76,7 +77,7 @@ export default function Technique() {
             {t.processQuestions.map((q) => <li key={q} style={{ marginBottom: 6 }}>{q}</li>)}
           </ol>
           <h3 style={{ marginTop: 'var(--s3)' }}>ראיות ומקורות</h3>
-          <p style={{ margin: 0 }}>{t.evidenceNote}</p>
+          <p style={{ margin: 0 }}><Rich text={t.evidenceNote} nums /></p>
           <ul style={{ margin: 0, paddingInlineStart: 20 }} className="muted">
             {t.sources.map((s) => <li key={s} dir="ltr" style={{ textAlign: 'right' }}>{s}</li>)}
           </ul>
@@ -88,12 +89,12 @@ export default function Technique() {
             const isDone = done.includes(ex.id)
             return (
               <article key={ex.id} className="panel stack" style={{ borderInlineStart: '3px solid var(--terracotta)' }}>
-                <div className="label">תרגיל לתרגול אישי · {ex.durationMin} דקות</div>
+                <div className="label kicker">תרגיל לתרגול אישי · {ex.durationMin} דקות</div>
                 <h3 style={{ margin: 0 }}>{ex.title}</h3>
                 <p style={{ margin: 0 }}>{ex.instructions}</p>
                 <div>
                   <div className="label">חומרים</div>
-                  <p style={{ margin: '4px 0 0' }}>{ex.materials.join(', ')}</p>
+                  <p className="value" style={{ margin: '4px 0 0', fontSize: 16 }}>{ex.materials.join(', ')}</p>
                 </div>
                 <div>
                   <div className="label">מה לשים לב אליו</div>

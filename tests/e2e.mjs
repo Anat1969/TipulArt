@@ -569,7 +569,7 @@ async function draw(page, tool) {
   for (const [i, id] of ids.entries()) await page.locator(`[data-testid=rate-${id}-${i % 3 === 0 ? (i % 6) : Math.min(5, (i % 6) + 1)}]`).click()
   await page.screenshot({ path: OUT + 'assessment.png', fullPage: true })
   await page.locator('[data-testid=sign]').click()
-  await page.waitForSelector('text=נחתם')
+  await page.waitForSelector('[data-testid=sign]', { state: 'detached', timeout: 10000 })
   ok(db.tipul_assessments[0].status === 'final' && Object.keys(db.tipul_assessments[0].ratings).length === 14, `הדירוג נחתם עם 14 סולמות (${db.tipul_assessments[0].status}, ${JSON.stringify(db.tipul_assessments[0].ratings)})`)
   ok(await page.locator('[data-testid=agreement]').count() === 1, 'מוצגת ההסכמה בהערכה')
 

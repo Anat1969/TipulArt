@@ -61,7 +61,7 @@ export const TECHNIQUES: Technique[] = [
     populations: ['מבוגרים', 'מתבגרים'],
     goals: ['expression', 'grief'],
     description:
-      'המטופל/ת מצייר/ת ללא הנחיה מוגדרת, ואחר כך מתאר/ת את הדימוי ומשייך/ת אליו. היצירה משמשת "דיבור סמלי" שמוביל לשיחה.',
+      'המטופל/ת מצייר/ת **ללא הנחיה מוגדרת**, ואחר כך מתאר/ת את הדימוי ומשייך/ת אליו. היצירה משמשת **"דיבור סמלי"** שמוביל לשיחה.',
     processQuestions: [
       'מה הדבר הראשון שאת/ה רואה בציור?',
       'אם הדימוי היה מדבר, מה היה אומר?',
@@ -69,7 +69,7 @@ export const TECHNIQUES: Technique[] = [
     ],
     evidence: 'mixed',
     evidenceNote:
-      'המטא־אנליזה של Joschko et al. (2024) מצאה אפקט בינוני (SMD 0.38) לטיפול באמנות בכלל, ברוב המחקרים באיכות נמוכה. הטכניקה לא נבדקה בנפרד.',
+      'המטא־אנליזה של Joschko et al. (2024) מצאה אפקט בינוני (SMD 0.38) לטיפול באמנות בכלל, ברוב המחקרים **באיכות נמוכה**. ==הטכניקה לא נבדקה בנפרד.==',
     sources: ['Naumburg, M., Dynamically Oriented Art Therapy, 1966', 'Joschko et al., JAMA Network Open, 2024'],
     exercises: [
       {
@@ -93,14 +93,14 @@ export const TECHNIQUES: Technique[] = [
     populations: ['טראומה', 'מבוגרים', 'מתבגרים'],
     goals: ['regulation', 'trauma'],
     description:
-      'הנחיה לציור מקום שבו המטופל/ת מרגיש/ה בטוח/ה. מתאים לעבודה ראשונית לוויסות ולבניית משאב פנימי.',
+      'הנחיה לציור **מקום שבו המטופל/ת מרגיש/ה בטוח/ה**. מתאים לעבודה ראשונית **לוויסות** ולבניית **משאב פנימי**.',
     processQuestions: [
       'מה יש במקום הזה שעושה אותו בטוח?',
       'מי או מה יכול להיכנס אליו?',
       'איפה בגוף מורגשת התחושה כשמסתכלים עליו?',
     ],
     evidence: 'mixed',
-    evidenceNote: 'מחקרי טראומה (למשל Maddox et al., 2024) מציגים תוצאות מעורבות. המשימה לא הוערכה בנפרד.',
+    evidenceNote: 'מחקרי טראומה (למשל Maddox et al., 2024) מציגים **תוצאות מעורבות**. ==המשימה לא הוערכה בנפרד.==',
     sources: ['Rubin, J. A., Approaches to Art Therapy', 'Maddox et al., 2024'],
     exercises: [
       {
@@ -124,10 +124,10 @@ export const TECHNIQUES: Technique[] = [
     populations: ['ילדים', 'מתבגרים'],
     goals: ['children', 'expression'],
     description:
-      'ציור של המשפחה או של מערכת יחסים. המיקום, הגודל והמרחק בציור הם חלק מהתצפית, לא בסיס לאבחנה.',
+      'ציור של המשפחה או של מערכת יחסים. **המיקום, הגודל והמרחק** בציור הם חלק מהתצפית, ==לא בסיס לאבחנה.==',
     processQuestions: ['מי צויר ראשון?', 'מי קרוב למי?', 'מה כל דמות עושה עכשיו?'],
     evidence: 'clinical',
-    evidenceNote: 'מעט מחקר מבוקר. רוב הידע קליני.',
+    evidenceNote: '**מעט מחקר מבוקר.** רוב הידע קליני.',
     sources: ['Rubin, J. A., Approaches to Art Therapy'],
     exercises: [
       {
@@ -151,10 +151,10 @@ export const TECHNIQUES: Technique[] = [
     populations: ['מבוגרים', 'מתבגרים', 'חרדת ביצוע'],
     goals: ['expression', 'grief'],
     description:
-      'בחירה והרכבה של דימויים מוכנים. מוריד את חרדת הביצוע ומתאים למי שמרגיש/ה "לא מוכשר/ת".',
+      'בחירה והרכבה של דימויים מוכנים. **מוריד את חרדת הביצוע** ומתאים למי שמרגיש/ה "לא מוכשר/ת".',
     processQuestions: ['מה משך אותך לדימוי הזה?', 'מה נשאר מחוץ לדף?', 'איזה דימוי הכי חשוב כאן?'],
     evidence: 'clinical',
-    evidenceNote: 'מעט מחקר ייעודי. מתבסס על הגישה הקלינית.',
+    evidenceNote: '**מעט מחקר ייעודי.** מתבסס על הגישה הקלינית.',
     sources: ['Kramer, E., Art as Therapy with Children, 1971'],
     exercises: [
       {
@@ -177,10 +177,10 @@ export const TECHNIQUES: Technique[] = [
     etc: ['kinesthetic_sensory'],
     populations: ['ילדים', 'מבוגרים', 'דיכאון'],
     goals: ['regulation', 'children', 'trauma'],
-    description: 'עבודה תלת־ממדית ועיבוד חושי. מתאים לוויסות ולביטוי של מתח דרך הידיים.',
+    description: 'עבודה תלת־ממדית ו**עיבוד חושי**. מתאים **לוויסות** ולביטוי של מתח דרך הידיים.',
     processQuestions: ['מה הידיים רצו לעשות עם החימר?', 'מתי היה צורך ללחוץ, ומתי ללטף?', 'מה נשאר בסוף?'],
     evidence: 'single',
-    evidenceNote: 'לפי הדוח יש ניסוי מבוקר אחד בחימר בדיכאון. יש לאמת פרטים מול מקור ראשוני לפני ציטוט.',
+    evidenceNote: 'לפי הדוח יש **ניסוי מבוקר אחד** בחימר בדיכאון. ==יש לאמת פרטים מול מקור ראשוני לפני ציטוט.==',
     sources: ['Kramer, E., Art as Therapy with Children, 1971'],
     exercises: [
       {
@@ -203,10 +203,10 @@ export const TECHNIQUES: Technique[] = [
     etc: ['cognitive_symbolic'],
     populations: ['מבוגרים', 'מאושפזים פסיכיאטריים'],
     goals: ['regulation', 'trauma'],
-    description: 'מבנה מעגלי שתוחם ומארגן. מתאים לאנשים שחשים פיזור או ערבול.',
+    description: 'מבנה מעגלי ש**תוחם ומארגן**. מתאים לאנשים שחשים **פיזור או ערבול**.',
     processQuestions: ['מאיפה התחלת, מהמרכז או מהשוליים?', 'מה נמצא במרכז?', 'האם המעגל הספיק?'],
     evidence: 'single',
-    evidenceNote: 'מחקר יחיד במאושפזים פסיכיאטריים. לא מספיק להכרעה.',
+    evidenceNote: '**מחקר יחיד** במאושפזים פסיכיאטריים. ==לא מספיק להכרעה.==',
     sources: ['docs/06-evidence-and-sources.md'],
     exercises: [
       {
@@ -230,10 +230,10 @@ export const TECHNIQUES: Technique[] = [
     populations: ['ילדים', 'מבוגרים'],
     goals: ['regulation', 'expression', 'children'],
     description:
-      'חומרים רטובים ופחות נשלטים מעוררים רגש. חומרים מובנים מארגנים ומרגיעים. הבחירה נעשית לפי רמת המטופל/ת.',
+      'חומרים רטובים ופחות נשלטים **מעוררים רגש**. חומרים מובנים **מארגנים ומרגיעים**. הבחירה נעשית **לפי רמת המטופל/ת**.',
     processQuestions: ['מה קרה כשהצבע זלג?', 'מתי היה צורך בעיפרון?', 'איזה חומר הרגיש יותר "שלך"?'],
     evidence: 'untested',
-    evidenceNote: 'עקרון קליני של מודל ETC, לא נבדק בנפרד.',
+    evidenceNote: 'עקרון קליני של מודל ETC, ==לא נבדק בנפרד.==',
     sources: ['Lusebrink, V. B., Imagery and Visual Expression in Therapy, 1990'],
     exercises: [
       {

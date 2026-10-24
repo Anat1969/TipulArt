@@ -94,7 +94,7 @@ function PlannerInner() {
   return (
     <div className="page">
       <PageHeader kicker="יישום" title="מתכנן מפגש">
-        ארבעה צעדים: מטופל/ת, מטרה, טכניקה ופרטים. התוכנית נכתבת מתוך התרגיל ואפשר לערוך אותה.
+        **ארבעה צעדים**: מטופל/ת, מטרה, טכניקה ופרטים. התוכנית נכתבת מתוך התרגיל ואפשר לערוך אותה.
       </PageHeader>
 
       <form className="stack" onSubmit={save} style={{ gap: 'var(--s4)' }}>

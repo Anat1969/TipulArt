@@ -49,7 +49,7 @@ function ClientsInner() {
   return (
     <div className="page">
       <PageHeader kicker="יומן" title="מטופלים">
-        כל מטופל/ת מזוהה בקוד בלבד. בוחרים קוד כדי לראות את ציר הזמן: מפגשים, תמונות ותצפיות.
+        כל מטופל/ת מזוהה **בקוד בלבד**. בוחרים קוד כדי לראות את ציר הזמן: מפגשים, תמונות ותצפיות.
       </PageHeader>
 
       <div className="grid grid-2">
