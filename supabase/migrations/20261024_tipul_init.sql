@@ -5,3 +5,7 @@
 -- ובדיקה שהמפתח הזר שייך לאותה מטפלת. anon ללא הרשאות.
 -- דלי פרטי tipul-artworks, נתיב {therapist_id}/{session_id}/{uuid}.jpg, מדיניות לפי התיקייה הראשונה.
 -- הנוסח המלא נשמר בהיסטוריית המיגרציות של הפרויקט בשם tipul_init.
+
+-- tipul_studio_home (24.10.2026): עמודת process ב-tipul_artworks, טבלאות tipul_home_links ו-tipul_home_submissions,
+-- פונקציות security definer: tipul_home_link_open, tipul_home_get, tipul_home_submit (anon לפי מפתח בלבד),
+-- מדיניות אחסון home/{token}/ להעלאה של מטופל/ת ולקריאה של המטפלת בלבד.

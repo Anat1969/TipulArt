@@ -24,7 +24,7 @@ const ok = (cond, msg) => {
   }
 }
 
-const db = { tipul_clients: [], tipul_sessions: [], tipul_observations: [], tipul_artworks: [], tipul_practice: [] }
+const db = { tipul_clients: [], tipul_sessions: [], tipul_observations: [], tipul_artworks: [], tipul_practice: [], tipul_home_links: [], tipul_home_submissions: [] }
 const requests = []
 let seq = 0
 const uuid = () => `00000000-0000-4000-8000-${String(++seq).padStart(12, '0')}`
@@ -52,6 +52,23 @@ async function handleRest(route) {
   const url = new URL(req.url())
   const table = url.pathname.split('/').pop()
   const method = req.method()
+  if (url.pathname.includes('/rpc/')) {
+    const body = JSON.parse(req.postData() || '{}')
+    requests.push(`RPC ${table}`)
+    const link = db.tipul_home_links.find((l) => l.token === body.p_token)
+    if (table === 'tipul_home_get')
+      return route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify(link ? { ...link, open: link.active, submitted: db.tipul_home_submissions.filter((x) => x.link_id === link.id).length } : null),
+      })
+    if (table === 'tipul_home_submit') {
+      if (!link || !body.p_image_path.startsWith(`home/${body.p_token}/`)) return route.fulfill({ status: 400, contentType: 'application/json', body: '{"message":"bad"}' })
+      const row = { id: uuid(), therapist_id: UID, client_id: link.client_id, link_id: link.id, image_path: body.p_image_path, process: body.p_process, reflections: body.p_reflections, session_id: null, created_at: new Date().toISOString() }
+      db.tipul_home_submissions.push(row)
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(row.id) })
+    }
+    return route.fulfill({ status: 404, body: '{}' })
+  }
   const single = (req.headers()['accept'] || '').includes('vnd.pgrst.object')
   requests.push(`${method} ${table}${url.search}`)
   const rows = db[table]
@@ -63,6 +80,7 @@ async function handleRest(route) {
     let list = rows
     const id = eqParam(url, 'id')
     const clientId = eqParam(url, 'client_id')
+    if (table === 'tipul_home_submissions' || table === 'tipul_home_links') list = [...list].reverse()
     if (id) list = list.filter((r) => r.id === id)
     if (clientId) list = list.filter((r) => r.client_id === clientId)
     if (table === 'tipul_clients')
@@ -76,6 +94,7 @@ async function handleRest(route) {
       id: uuid(),
       therapist_id: UID,
       created_at: new Date().toISOString(),
+      ...(table === 'tipul_home_links' ? { token: `tok${seq}abc`, active: true, max_submissions: 3, expires_at: new Date(Date.now() + 14 * 864e5).toISOString() } : {}),
       ...b,
     }))
     if (table === 'tipul_clients' && items.some((i) => rows.some((r) => r.code === i.code)))
@@ -118,6 +137,7 @@ async function mockSupabase(context) {
       })
     }
     if (p.startsWith('/storage/v1/object/tipul-artworks/') && req.method() === 'POST') {
+      if (p.includes('/home/') && !db.tipul_home_links.some((l) => p.includes(`/home/${l.token}/`))) return route.fulfill({ status: 403, body: '{}' })
       requests.push(`UPLOAD ${p}`)
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ Key: p }) })
     }
@@ -159,12 +179,17 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   await page.screenshot({ path: OUT + 'home-desktop-0.png' })
 
   // כפתורי מערכת מתחת ללוגו
+  ok(await page.locator('[data-testid=copy-link]').count() === 0, 'בסרגל רואים רק את הלוגו, בלי כפתורים')
+  ok((await page.locator('[data-testid=anat-button]').innerText()).includes("אד' ענת שטיבלמן"), 'כפתור הלוגו של ענת מוצג')
+  await page.locator('[data-testid=anat-button]').click()
   const inLogo = await page.evaluate(() => {
-    const logo = document.querySelector('[data-testid=anat-logo]')
+    const logo = document.querySelector('[data-testid=anat-menu]')
     return ['copy-link', 'dev-chat', 'research', 'auth-btn'].every((id) => logo?.contains(document.querySelector(`[data-testid=${id}]`)))
   })
-  ok(inLogo, 'כפתורי המערכת והכניסה בתוך הלוגו של ענת')
-  ok((await page.locator('[data-testid=anat-logo]').innerText()).includes("אד' ענת שטיבלמן"), 'הלוגו של ענת מוצג')
+  ok(inLogo, 'לחיצה על הלוגו פותחת את כל כפתורי המערכת והכניסה')
+  await page.keyboard.press('Escape')
+  ok(await page.locator('[data-testid=anat-menu]').count() === 0, 'Escape סוגר את התפריט')
+  await page.locator('[data-testid=anat-button]').click()
   const radius = await page.locator('[data-testid=copy-link]').evaluate((el) => getComputedStyle(el).borderRadius)
   ok(radius === '0px', `כפתורים מרובעים (border-radius ${radius})`)
   ok((await page.locator('[data-testid=dev-chat]').getAttribute('href')).includes('claude.ai/code/session_'), 'שיחת הפיתוח מקשרת לשיחה')
@@ -178,6 +203,7 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   }
   ok(await page.locator('.chapter-rail a.on').count() === 1, 'מסילת הפרקים מסמנת פרק פעיל')
 
+  if (!(await page.locator('[data-testid=anat-menu]').count())) await page.locator('[data-testid=anat-button]').click()
   await page.locator('[data-testid=copy-link]').click()
   ok(await page.waitForSelector('[data-testid=copy-link]:has-text("הועתק")', { timeout: 3000 }).then(() => true, () => false), 'העתקת קישור מגיבה')
   const clip = await page.evaluate(() => navigator.clipboard.readText())
@@ -217,6 +243,7 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
 
   await page.getByRole('link', { name: 'מתכנן מפגש' }).click()
   ok(await page.waitForSelector('text=האזור הזה אישי', { timeout: 5000 }).then(() => true, () => false), 'מתכנן ללא כניסה מציג הסבר וכניסה')
+  await page.locator('[data-testid=anat-button]').click()
   await page.locator('[data-testid=auth-btn]').click()
   ok(await page.waitForSelector('input[type=password]', { timeout: 5000 }).then(() => true, () => false), 'דף כניסה עם אימייל וסיסמה')
   ok(await page.getByText('כניסה עם Google').count() === 0, 'Google כבוי: הכפתור מוסתר')
@@ -244,7 +271,7 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   await page.getByPlaceholder('מ-014').fill('מ-014')
   await page.locator('select.select').selectOption('ילדים')
   await page.getByRole('button', { name: 'הוספה' }).click()
-  await page.waitForSelector('text=מ-014')
+  await page.waitForSelector('a[href^="/clients/"]')
   ok(requests.some((r) => r.startsWith('POST tipul_clients')), 'יצירת מטופל/ת שולחת POST')
   await page.getByPlaceholder('מ-014').fill('מ-014')
   await page.getByRole('button', { name: 'הוספה' }).click()
@@ -293,7 +320,9 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   ok(requests.some((r) => r.startsWith('POST tipul_practice')), 'סימון תרגול נשמר')
   ok((await page.locator('[data-testid=practice]').innerText()) === 'תרגלתי', 'כפתור התרגול מתעדכן')
 
-  await page.getByRole('button', { name: 'יציאה' }).click()
+  await page.locator('[data-testid=anat-button]').click()
+  await page.locator('[data-testid=auth-btn]').click()
+  await page.locator('[data-testid=anat-button]').click()
   await page.waitForSelector('[data-testid=auth-btn]:has-text("כניסה")')
   ok(true, 'יציאה מחזירה כפתור כניסה')
   ok(errors.length === 0, `אין שגיאות דף ${errors.join(' | ')}`)
@@ -342,6 +371,125 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   await page.evaluate(() => document.getElementById('results').scrollIntoView({ block: 'center' }))
   await page.waitForTimeout(800)
   ok(errors.length === 0, 'הפחתת תנועה: הסצנה פועלת ללא שגיאות')
+  await context.close()
+}
+
+// ---------- סטודיו וערוץ הבית ----------
+async function draw(page, tool) {
+  if (tool) await page.locator(`[data-testid=tool-${tool}]`).click()
+  await page.evaluate(() => document.querySelector('[data-testid=studio-canvas]').scrollIntoView({ block: 'start' }))
+  const box = await page.locator('[data-testid=studio-canvas]').boundingBox()
+  const cx = box.x + box.width / 2
+  const cy = Math.max(box.y, 0) + Math.min(box.height / 2, 260)
+  await page.mouse.move(cx - 120, cy - 40)
+  await page.mouse.down()
+  for (let i = 0; i <= 12; i++) await page.mouse.move(cx - 120 + i * 20, cy - 40 + Math.sin(i) * 30, { steps: 2 })
+  await page.mouse.up()
+  await page.waitForTimeout(150)
+}
+
+{
+  console.log('studio and home channel')
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'he-IL', permissions: ['clipboard-read', 'clipboard-write'] })
+  await mockSupabase(context)
+  await context.addInitScript((s) => localStorage.setItem('tipulart-auth', JSON.stringify(s)), fakeSession)
+  const page = await context.newPage()
+  const errors = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  page.on('dialog', (d) => d.accept())
+
+  // סטודיו פתוח לתרגול מתוך הספרייה
+  await page.goto(BASE + '/library/clay')
+  await page.locator('[data-testid=practice-studio]').click()
+  await page.waitForSelector('[data-testid=studio-canvas]')
+  ok(await page.getByText('כדור, לחיצה, צורה').count() >= 1, 'סטודיו נפתח עם התרגיל מהספרייה')
+  ok(await page.locator('[data-testid=studio-finish]').isDisabled(), 'סיום חסום לפני הקו הראשון')
+  for (const t of ['charcoal', 'wet', 'smudge', 'eraser']) await draw(page, t)
+  await page.locator('.swatch').nth(1).click()
+  await draw(page, 'wet')
+  await page.screenshot({ path: OUT + 'studio.png' })
+  await page.locator('[data-testid=studio-finish]').click()
+  await page.waitForSelector('[data-testid=process-view]')
+  const strokesShown = await page.locator('.metric').nth(3).locator('b').innerText()
+  ok(strokesShown === '5', `תמונת התהליך סופרת 5 קווים (${strokesShown})`)
+  await page.locator('[data-testid=replay]').click()
+  await page.waitForTimeout(500)
+  ok(true, 'שחזור התהליך רץ')
+  await page.screenshot({ path: OUT + 'studio-process.png', fullPage: true })
+
+  // מטפלת יוצרת קישור לבית
+  const clientId = db.tipul_clients[0].id
+  await page.goto(BASE + `/clients/${clientId}`)
+  await page.waitForSelector('[data-testid=home-channel]')
+  await page.locator('[data-testid=home-tech]').selectOption('mandala')
+  ok((await page.locator('[data-testid=home-instructions]').inputValue()).includes('עיגול'), 'ההנחיה נטענת מהתרגיל')
+  await page.locator('[data-testid=home-create]').click()
+  await page.waitForSelector('[data-testid=home-copy]')
+  ok(requests.some((r) => r.startsWith('POST tipul_home_links')), 'יצירת קישור שולחת POST')
+  const link = db.tipul_home_links[0]
+  ok((await page.evaluate(() => navigator.clipboard.readText())).endsWith(`/home/${link.token}`), 'הקישור הועתק')
+
+  // מטופל/ת בבית, בלי חשבון
+  const anon = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'he-IL' })
+  await mockSupabase(anon)
+  const pp = await anon.newPage()
+  pp.on('pageerror', (e) => errors.push(e.message))
+  await pp.goto(BASE + `/home/${link.token}`)
+  await pp.waitForSelector('[data-testid=studio-canvas]')
+  ok(await pp.locator('.main-nav').count() === 0, 'דף המטופל/ת: בלי ניווט של המטפלת')
+  await pp.locator('[data-testid=anat-button]').click()
+  ok(await pp.locator('[data-testid=dev-chat]').count() === 0, 'דף המטופל/ת: הלוגו בלי כפתורי עריכה')
+  ok(await pp.getByText('1201').count() >= 1, 'דף המטופל/ת: מספר ער"ן מוצג')
+  await draw(pp, 'charcoal')
+  await draw(pp, 'wet')
+  await pp.locator('[data-testid=studio-finish]').click()
+  await pp.locator('[data-testid=answer-0]').fill('מהמרכז, לאט')
+  ok(await pp.locator('[data-testid=send-home]').isDisabled(), 'שליחה חסומה עד הסכמה')
+  await pp.locator('[data-testid=consent]').check()
+  await pp.screenshot({ path: OUT + 'home-patient.png', fullPage: true })
+  await pp.locator('[data-testid=send-home]').click()
+  await pp.waitForSelector('text=היצירה נשלחה')
+  ok(requests.some((r) => r.startsWith(`UPLOAD /storage/v1/object/tipul-artworks/home/${link.token}/`)), 'התמונה הועלתה לתיקיית הקישור')
+  ok(requests.includes('RPC tipul_home_submit'), 'השליחה עוברת בפונקציה המאובטחת')
+  const sub = db.tipul_home_submissions[0]
+  ok(sub?.process?.summary?.strokes === 2 && sub.reflections[0].a === 'מהמרכז, לאט', 'נתוני התהליך והתשובות נשמרו')
+  await anon.close()
+
+  // מטפלת רואה, פותחת כמפגש ורושמת תצפית
+  await page.reload()
+  await page.waitForSelector('[data-testid=home-submission]')
+  ok(await page.locator('[data-testid=home-submission] [data-testid=process-view]').count() === 1, 'היצירה מהבית מוצגת עם תמונת תהליך')
+  await page.screenshot({ path: OUT + 'home-therapist.png', fullPage: true })
+  await page.locator('[data-testid=to-session]').click()
+  await page.waitForURL(/\/sessions\//)
+  await page.waitForSelector('[data-testid=process-view]')
+  ok(db.tipul_artworks.some((a) => a.storage_path === sub.image_path && a.process), 'המפגש נוצר עם היצירה ונתוני התהליך')
+  ok(db.tipul_home_submissions[0].session_id, 'היצירה מהבית מקושרת למפגש')
+
+  // סטודיו בתוך מפגש
+  await page.locator('[data-testid=open-studio]').click()
+  await page.waitForSelector('[data-testid=studio-canvas]')
+  await draw(page, 'charcoal')
+  await page.locator('[data-testid=studio-finish]').click()
+  await page.locator('[data-testid=save-studio]').click()
+  await page.waitForURL(/\/sessions\//)
+  await page.waitForSelector('[data-testid=process-view]')
+  ok(db.tipul_artworks.filter((a) => a.process).length === 2, 'יצירה מהסטודיו נשמרה ליומן עם התהליך')
+  ok(errors.length === 0, `אין שגיאות ${errors.join(' | ')}`)
+
+  // נייד
+  const mob = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, locale: 'he-IL' })
+  await mockSupabase(mob)
+  const mp = await mob.newPage()
+  for (const pth of ['/studio', `/home/${link.token}`]) {
+    await mp.goto(BASE + pth)
+    await mp.waitForTimeout(800)
+    await noHorizontalScroll(mp, pth)
+  }
+  await mp.goto(BASE + '/studio')
+  await mp.waitForTimeout(500)
+  await mp.screenshot({ path: OUT + 'studio-mobile.png', fullPage: true })
+  await mob.close()
   await context.close()
 }
 
