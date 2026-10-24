@@ -1,0 +1,17 @@
+{
+  "name": "TipulArt · כלי עבודה לטיפול באמנות",
+  "short_name": "TipulArt",
+  "description": "ספריית טכניקות, מתכנן מפגשים, יומן וציר זמן למטפלת באמנות.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3eee5",
+  "theme_color": "#f3eee5",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

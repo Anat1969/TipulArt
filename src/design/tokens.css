@@ -1,0 +1,81 @@
+/* מערכת העיצוב של TipulArt. כל צבע, רווח ותנועה מוגדרים כאן בלבד. */
+:root {
+  --paper: #f3eee5;
+  --paper-2: #e9e1d3;
+  --paper-3: #ddd2c0;
+  --surface: rgba(251, 248, 242, 0.82);
+  --surface-solid: #fbf8f2;
+  --ink: #221f1b;
+  --ink-2: #47413a;
+  --muted: #645d54;
+  --line: rgba(34, 31, 27, 0.14);
+  --line-strong: rgba(34, 31, 27, 0.32);
+
+  --ochre: #a8741c;
+  --terracotta: #a9472f;
+  --charcoal: #2b2d31;
+  --sage: #5d6b52;
+
+  --etc-ks: #a9472f;
+  --etc-pa: #a8741c;
+  --etc-cs: #3b4a63;
+  --etc-cr: #5d6b52;
+
+  --focus: #3b4a63;
+  --danger: #8a3324;
+
+  --shadow-1: 0 1px 2px rgba(34, 31, 27, 0.06), 0 4px 14px rgba(34, 31, 27, 0.06);
+  --shadow-2: 0 2px 4px rgba(34, 31, 27, 0.06), 0 18px 40px -12px rgba(34, 31, 27, 0.22);
+  --shadow-press: inset 0 2px 0 rgba(34, 31, 27, 0.12);
+
+  --font-display: 'Frank Ruhl Libre', 'IBM Plex Sans Hebrew', serif;
+  --font-body: 'IBM Plex Sans Hebrew', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 16px;
+  --s4: 24px;
+  --s5: 32px;
+  --s6: 48px;
+  --s7: 72px;
+  --s8: 112px;
+
+  --radius: 0;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur: 320ms;
+  --header-h: 128px;
+  --max: 1180px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1b222a;
+    --paper-2: #222b35;
+    --paper-3: #2c3743;
+    --surface: rgba(30, 38, 47, 0.84);
+    --surface-solid: #1f2730;
+    --ink: #ede7dd;
+    --ink-2: #cfc7ba;
+    --muted: #aaa194;
+    --line: rgba(237, 231, 221, 0.14);
+    --line-strong: rgba(237, 231, 221, 0.34);
+
+    --ochre: #d4a24a;
+    --terracotta: #d97a5f;
+    --charcoal: #d9d4cc;
+    --sage: #9bab8c;
+
+    --etc-ks: #d97a5f;
+    --etc-pa: #d4a24a;
+    --etc-cs: #8fa3c4;
+    --etc-cr: #9bab8c;
+
+    --focus: #8fa3c4;
+    --danger: #e08a74;
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 14px rgba(0, 0, 0, 0.25);
+    --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.3), 0 18px 40px -12px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}

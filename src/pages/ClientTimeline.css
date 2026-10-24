@@ -1,0 +1,43 @@
+.etc-strip { margin-bottom: var(--s5); }
+.strip-scroll { overflow-x: auto; max-width: 100%; padding-top: 10px; }
+.strip-row { display: grid; grid-template-columns: 120px max-content; gap: 10px; align-items: center; margin-bottom: 6px; }
+.strip-name { font-size: 14px; color: var(--ink-2); }
+.strip-cells { display: grid; gap: 4px; }
+.strip-cell { display: block; width: 22px; height: 22px; border: 1px solid var(--line-strong); }
+
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  display: grid;
+  gap: var(--s3);
+}
+.timeline::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 7px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: linear-gradient(180deg, var(--ochre), var(--terracotta));
+  opacity: 0.6;
+}
+.timeline li {
+  position: relative;
+  padding-inline-start: 34px;
+  min-width: 0;
+}
+.tl-dot {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 22px;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--terracotta);
+  box-shadow: var(--shadow-1);
+}
+.tl-card { display: block; text-decoration: none; transition: transform var(--dur) var(--ease); }
+.tl-card:hover { transform: translateX(-4px); }
+.tl-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tl-thumbs img { width: 84px; height: 108px; object-fit: cover; box-shadow: var(--shadow-1); }

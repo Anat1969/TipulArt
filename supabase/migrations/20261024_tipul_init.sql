@@ -1,0 +1,7 @@
+-- הוחל על פרויקט cultura-GH (ktqmwpbzcnzkhjskqisy) ב-24.10.2026 דרך Supabase MCP.
+-- הפרויקט משותף לכמה אפליקציות, ולכן כל הטבלאות בקידומת tipul_ והדלי tipul-artworks.
+-- טבלאות: tipul_clients, tipul_sessions, tipul_observations, tipul_artworks, tipul_practice.
+-- כל טבלה: therapist_id default auth.uid(), RLS מלא לפי therapist_id = auth.uid(),
+-- ובדיקה שהמפתח הזר שייך לאותה מטפלת. anon ללא הרשאות.
+-- דלי פרטי tipul-artworks, נתיב {therapist_id}/{session_id}/{uuid}.jpg, מדיניות לפי התיקייה הראשונה.
+-- הנוסח המלא נשמר בהיסטוריית המיגרציות של הפרויקט בשם tipul_init.
