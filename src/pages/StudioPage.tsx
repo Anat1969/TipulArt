@@ -6,6 +6,9 @@ import { ProcessView } from '../studio/ProcessView'
 import { ALL_EXERCISES, techniqueById } from '../content/techniques'
 import { useAuth } from '../logic/auth'
 import { uploadArtworkBlob } from '../logic/data'
+import { analyzeImage } from '../studio/analyzeImage'
+import { AutoReport } from '../assessment/AutoReport'
+import { METHODS, runAuto, type AutoResult, type MethodId } from '../assessment/auto'
 
 // סטודיו פתוח: מטפלת מתרגלת בעצמה, או יוצרת בתוך מפגש ושומרת ליומן.
 export default function StudioPage() {
@@ -19,6 +22,22 @@ export default function StudioPage() {
   const [round, setRound] = useState(0)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  const [method, setMethod] = useState<MethodId>('feats')
+  const [auto, setAuto] = useState<AutoResult | null>(null)
+  const [autoBusy, setAutoBusy] = useState(false)
+
+  const runAutoNow = async (m: MethodId) => {
+    if (!result) return
+    setMethod(m)
+    setAutoBusy(true)
+    try {
+      const computed = await analyzeImage(result.dataUrl)
+      setAuto(runAuto(m, computed, result.process))
+    } catch (e) {
+      setErr((e as Error).message)
+    }
+    setAutoBusy(false)
+  }
 
   const saveToSession = async () => {
     if (!result || !sessionId) return
@@ -63,7 +82,7 @@ export default function StudioPage() {
                 </button>
               )}
               <a className="btn" href={result.dataUrl} download="tipulart-studio.jpg">הורדת התמונה</a>
-              <button type="button" className="btn btn-quiet" onClick={() => { setResult(null); setRound((r) => r + 1) }}>
+              <button type="button" className="btn btn-quiet" onClick={() => { setResult(null); setAuto(null); setRound((r) => r + 1) }}>
                 יצירה חדשה
               </button>
             </div>
@@ -77,6 +96,21 @@ export default function StudioPage() {
           </section>
           <section className="panel">
             <ProcessView process={result.process} />
+          </section>
+          <section className="panel stack" style={{ gridColumn: '1 / -1' }} data-testid="studio-auto">
+            <div className="label">הערכה אוטומטית</div>
+            <p style={{ margin: 0 }}>
+              בוחרים שיטה, והמנוע מדרג את היצירה ומסביר כל פרמטר: מה הוא בודק, מה נמדד ביצירה, איך חושב הציון ומה המגבלה. זה בסיס להבחנה שלך, לא אבחנה.
+            </p>
+            <div className="lead-choice">
+              {METHODS.map((m) => (
+                <button key={m.id} type="button" className={`btn ${auto?.method === m.id ? 'btn-primary' : ''}`} onClick={() => runAutoNow(m.id)} disabled={autoBusy} data-testid={`studio-auto-${m.id}`}>
+                  {autoBusy && method === m.id ? 'מודד' : `הערכה אוטומטית: ${m.label}`}
+                  <span>{m.what}</span>
+                </button>
+              ))}
+            </div>
+            {auto && <AutoReport result={auto} />}
           </section>
         </div>
       )}

@@ -6,6 +6,9 @@ import { ProcessView } from '../../studio/ProcessView'
 import { QUADRANT_LABELS } from '../../studio/analyzeImage'
 import { FEATS, PPAT, SCALE, agreement, type Ratings } from '../../content/feats'
 import { getAssessment, getClient, requestAiDraft, saveAssessment, signedUrls, type Assessment, type Client } from '../../logic/data'
+import { Rich } from '../../components/Rich'
+import { AutoReport } from '../../assessment/AutoReport'
+import { METHODS, autoPairs, runAuto, type MethodId } from '../../assessment/auto'
 import './Assessment.css'
 
 const CONF: Record<string, string> = { low: 'ביטחון נמוך', medium: 'ביטחון בינוני', high: 'ביטחון גבוה' }
@@ -18,6 +21,7 @@ function DetailInner() {
   const [ratings, setRatings] = useState<Ratings>({})
   const [notes, setNotes] = useState('')
   const [aiBusy, setAiBusy] = useState(false)
+  const [method, setMethod] = useState<MethodId>('feats')
   const [status, setStatus] = useState('')
   const [err, setErr] = useState('')
 
@@ -52,6 +56,12 @@ function DetailInner() {
     .filter(([ai, t]) => ai?.applicable && t !== null && t !== undefined)
     .map(([ai, t]) => [ai!.score, t as number] as [number, number])
   const agr = agreement(pairs)
+  const auto = a.computed?.auto
+  const lead = a.computed?.autoLead
+  const autoShown = Boolean(auto?.feats)
+  const aPairs = autoPairs(auto?.feats, ratings)
+  const autoAgr = agreement(aPairs)
+  const autoById = new Map((auto?.feats?.items ?? []).map((i) => [i.id, i]))
 
   const flash = (m: string) => {
     setStatus(m)
@@ -68,6 +78,23 @@ function DetailInner() {
       setErr((e as Error).message)
     }
     setAiBusy(false)
+  }
+
+  // הערכה אוטומטית: המכשיר מוביל (מיד) או המטפלת מובילה (נפתחת אחרי שכל הסולמות דורגו)
+  const startAuto = async (who: 'machine' | 'therapist', compute: boolean) => {
+    if (!a.computed) return
+    setErr('')
+    try {
+      const computed = {
+        ...a.computed,
+        autoLead: a.computed.autoLead ?? who,
+        ...(compute ? { auto: { feats: runAuto('feats', a.computed, a.process, ppat), etc: runAuto('etc', a.computed, a.process) } } : {}),
+      }
+      await saveAssessment(a.id, { computed, ...(compute && who === 'therapist' ? { ratings } : {}) })
+      setA({ ...a, computed, ...(compute && who === 'therapist' ? { ratings } : {}) })
+    } catch (e) {
+      setErr((e as Error).message)
+    }
   }
 
   const save = async (sign: boolean) => {
@@ -98,7 +125,7 @@ function DetailInner() {
         kicker={`הערכה מובנית · ${new Date(a.created_at).toLocaleDateString('he-IL')} · ${a.mode === 'photo' ? 'צילום מנייר' : 'סטודיו'} · ${final ? 'חתום' : 'טיוטה'}`}
         title={ppat ? PPAT.name : 'ציור חופשי'}
       >
-        שלוש שכבות: מדידה ממוחשבת, טיוטת דירוג, ודירוג שלך. **רק הדירוג שלך נחתם ונכנס לציר הזמן.**
+        שלוש שכבות: מדידה ממוחשבת, **הערכה אוטומטית עם הסבר לכל פרמטר**, ודירוג שלך. ==המכשיר ואת משווים הערכות==, ורק הדירוג שלך נחתם ונכנס לציר הזמן.
       </PageHeader>
 
       <div className="grid grid-2" style={{ marginBottom: 'var(--s5)' }}>
@@ -136,8 +163,54 @@ function DetailInner() {
         </section>
 
         <section className="stack">
+          <div className="panel stack" data-testid="auto-panel">
+            <div className="label">שכבה 2 · הערכה אוטומטית</div>
+            {!a.computed ? (
+              <p className="muted" style={{ margin: 0 }}>אין מדידה ממוחשבת להערכה הזו.</p>
+            ) : !autoShown && lead !== 'therapist' ? (
+              <>
+                <p style={{ margin: 0 }}>
+                  <Rich text="המנוע מדרג כל סולם מתוך המדידות של התמונה והתהליך, ומסביר לכל ציון **מה נמדד, איך חושב ומה המגבלה.** ==בחרי מי מוביל:== המכשיר נותן בסיס ואת בוחנת אותו, או שאת מדרגת קודם וההערכה האוטומטית נפתחת להשוואה." />
+                </p>
+                {!final && (
+                  <div className="lead-choice">
+                    <button type="button" className="btn btn-primary" onClick={() => startAuto('machine', true)} data-testid="run-auto">
+                      הערכה אוטומטית עכשיו
+                      <span>המכשיר מוביל. את בוחנת, מסכימה או משנה.</span>
+                    </button>
+                    <button type="button" className="btn" onClick={() => startAuto('therapist', false)} data-testid="lead-therapist">
+                      קודם אני מדרגת
+                      <span>את מובילה. ההשוואה נפתחת אחרי שכל הסולמות דורגו.</span>
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : !autoShown ? (
+              <>
+                <p style={{ margin: 0 }}>
+                  <Rich text={`**את מובילה.** ההערכה האוטומטית מחכה עד שתדרגי את כל הסולמות, כדי שהדירוג שלך יהיה עצמאי. ${items.length - missing.length}/${items.length} דורגו.`} nums />
+                </p>
+                <button type="button" className="btn btn-primary" style={{ justifySelf: 'start' }} disabled={missing.length > 0} onClick={() => startAuto('therapist', true)} data-testid="reveal-auto">
+                  השוואה להערכה האוטומטית
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="row" role="tablist" aria-label="שיטה">
+                  {METHODS.map((m) => (
+                    <button key={m.id} type="button" role="tab" aria-selected={method === m.id} className={`btn btn-sm ${method === m.id ? 'btn-primary' : ''}`} onClick={() => setMethod(m.id)} data-testid={`method-${m.id}`}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="muted" style={{ margin: 0, fontSize: 14 }}>{METHODS.find((m) => m.id === method)!.what} {lead === 'therapist' ? 'הובלת: דירגת לפני שראית.' : 'המכשיר הוביל.'}</p>
+                {auto?.[method] && <AutoReport result={auto[method]!} therapist={method === 'feats' ? ratings : null} />}
+              </>
+            )}
+          </div>
+
           <div className="panel stack" data-testid="ai-panel">
-            <div className="label">שכבה 2 · טיוטת דירוג</div>
+            <div className="label">קריאה נוספת · טיוטת Claude</div>
             {!a.ai_draft ? (
               <>
                 <p style={{ margin: 0 }}>
@@ -173,12 +246,22 @@ function DetailInner() {
             )}
           </div>
 
-          {agr && (
+          {(agr || autoAgr) && (
             <div className="panel stack" style={{ gap: 8 }} data-testid="agreement">
               <div className="label">הסכמה בהערכה הזו</div>
               <div className="process-grid">
-                <div className="metric"><b>{pairs.filter(([x, y]) => x === y).length}/{pairs.length}</b><span>הסכמה מלאה</span></div>
-                <div className="metric"><b>{pairs.filter(([x, y]) => Math.abs(x - y) <= 1).length}/{pairs.length}</b><span>בטווח נקודה</span></div>
+                {autoAgr && (
+                  <>
+                    <div className="metric"><b>{aPairs.filter(([x, y]) => x === y).length}/{aPairs.length}</b><span>מכשיר: הסכמה מלאה</span></div>
+                    <div className="metric"><b>{aPairs.filter(([x, y]) => Math.abs(x - y) <= 1).length}/{aPairs.length}</b><span>מכשיר: בטווח נקודה</span></div>
+                  </>
+                )}
+                {agr && (
+                  <>
+                    <div className="metric"><b>{pairs.filter(([x, y]) => x === y).length}/{pairs.length}</b><span>Claude: הסכמה מלאה</span></div>
+                    <div className="metric"><b>{pairs.filter(([x, y]) => Math.abs(x - y) <= 1).length}/{pairs.length}</b><span>Claude: בטווח נקודה</span></div>
+                  </>
+                )}
               </div>
               <Link to="/assessment" className="muted" style={{ fontSize: 13 }}>המהימנות המצטברת בכל ההערכות</Link>
             </div>
@@ -213,10 +296,20 @@ function DetailInner() {
                   ) : (
                     <span className="muted">לפי הטיוטה: לא ניתן לדרג בעבודה הזו. {ai.rationale}</span>
                   )
+                ) : null}
+                {autoShown ? (
+                  autoById.get(f.id)?.score !== null && autoById.get(f.id) ? (
+                    <span className="row" style={{ gap: 8 }} data-testid={`auto-row-${f.id}`}>
+                      <span className="score-badge" title="הערכה אוטומטית">{autoById.get(f.id)!.score}</span>
+                      <span className="label" style={{ textTransform: 'none' }}>אוטומטי</span>
+                      {mine !== undefined && mine !== null && mine !== autoById.get(f.id)!.score && <span className="label" style={{ color: 'var(--terracotta)', textTransform: 'none' }}>הפרש {Math.abs(mine - (autoById.get(f.id)!.score as number))}</span>}
+                    </span>
+                  ) : (
+                    <span className="muted" style={{ fontSize: 13 }}>אוטומטי: לא נמדד, נשאר לך.</span>
+                  )
                 ) : (
-                  <span className="muted">אין טיוטה.</span>
+                  proxy !== undefined && lead !== 'therapist' && <span className="muted" style={{ fontSize: 13 }}>קירוב ממוחשב: {proxy}</span>
                 )}
-                {proxy !== undefined && <span className="muted" style={{ fontSize: 13 }}>קירוב ממוחשב: {proxy}</span>}
               </div>
               <div className="score-buttons" role="group" aria-label={`דירוג ${f.he}`}>
                 {SCALE.map((v) => (

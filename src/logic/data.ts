@@ -348,8 +348,8 @@ export async function listAssessments(clientId: string): Promise<Assessment[]> {
   return check(await supabase.from('tipul_assessments').select('*').eq('client_id', clientId).order('created_at', { ascending: true }))
 }
 
-export async function listFinalAssessments(): Promise<Pick<Assessment, 'id' | 'ai_draft' | 'ratings' | 'instrument'>[]> {
-  return check(await supabase.from('tipul_assessments').select('id, ai_draft, ratings, instrument').eq('status', 'final'))
+export async function listFinalAssessments(): Promise<Pick<Assessment, 'id' | 'ai_draft' | 'ratings' | 'instrument' | 'computed'>[]> {
+  return check(await supabase.from('tipul_assessments').select('id, ai_draft, ratings, instrument, computed').eq('status', 'final'))
 }
 
 export async function requestAiDraft(id: string): Promise<Assessment> {
@@ -367,6 +367,6 @@ export async function requestAiDraft(id: string): Promise<Assessment> {
   return (data as { assessment: Assessment }).assessment
 }
 
-export async function saveAssessment(id: string, patch: Partial<Pick<Assessment, 'ratings' | 'notes' | 'status' | 'finalized_at'>>) {
+export async function saveAssessment(id: string, patch: Partial<Pick<Assessment, 'ratings' | 'notes' | 'status' | 'finalized_at' | 'computed'>>) {
   check(await supabase.from('tipul_assessments').update(patch).eq('id', id))
 }

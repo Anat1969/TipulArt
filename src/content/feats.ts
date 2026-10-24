@@ -70,6 +70,11 @@ export type Computed = {
   centerOffset: number
   edgeDensity: number
   proxies: { space: number; prominence_of_color: number }
+  // מספר הרכיבים הנפרדים בדף (אזורי סימון שאינם נוגעים זה בזה). חסר בהערכות ישנות.
+  elements?: number
+  // הערכה אוטומטית לפי שיטה, ומי הוביל: המכשיר קודם או המטפלת קודם
+  auto?: Partial<Record<'feats' | 'etc', import('../assessment/auto').AutoResult>>
+  autoLead?: 'machine' | 'therapist'
 }
 
 // ---------- מהימנות: הסכמה בין הטיוטה הממוחשבת לבין המטפלת ----------

@@ -41,7 +41,7 @@ export async function analyzeImage(src: string): Promise<Computed> {
   ctx.drawImage(img, 0, 0, w, h)
   const d = ctx.getImageData(0, 0, w, h).data
   if (w < 8 || h < 8)
-    return { coverage: 0, colorShare: 0, colors: [], colorCount: 0, quadrants: [0, 0, 0, 0], centerOffset: 0, edgeDensity: 0, proxies: { space: 0, prominence_of_color: 0 } }
+    return { coverage: 0, colorShare: 0, colors: [], colorCount: 0, quadrants: [0, 0, 0, 0], centerOffset: 0, edgeDensity: 0, proxies: { space: 0, prominence_of_color: 0 }, elements: 0 }
 
   // הנייר: חציון הבהירות בשולי התמונה
   const border: number[] = []
@@ -93,6 +93,41 @@ export async function analyzeImage(src: string): Promise<Computed> {
       if (Math.hypot(gx, gy) > 40) edges++
     }
   const total = (w - 2) * (h - 2)
+  // רכיבים: רשת תאים גסה, תא מסומן אם יש בו לפחות 4% סימון, ורכיבים מחוברים של תאים
+  const GX = 48
+  const GY = Math.max(8, Math.round((GX * h) / w))
+  const cellCount = new Array(GX * GY).fill(0)
+  for (let y = 1; y < h - 1; y++)
+    for (let x = 1; x < w - 1; x++) {
+      const k = y * w + x
+      const i = k * 4
+      if (paperL - lum[k] > thresh || rgbToHsv(d[i], d[i + 1], d[i + 2])[1] > 0.35) cellCount[Math.min(GY - 1, Math.floor((y / h) * GY)) * GX + Math.min(GX - 1, Math.floor((x / w) * GX))]++
+    }
+  const cellArea = (w / GX) * (h / GY)
+  const on = cellCount.map((n) => n / cellArea > 0.04)
+  const seen = new Array(GX * GY).fill(false)
+  let elements = 0
+  for (let c = 0; c < GX * GY; c++) {
+    if (!on[c] || seen[c]) continue
+    let size = 0
+    const stack = [c]
+    seen[c] = true
+    while (stack.length) {
+      const q = stack.pop()!
+      size++
+      const qx = q % GX
+      const qy = Math.floor(q / GX)
+      for (const [nx, ny] of [[qx + 1, qy], [qx - 1, qy], [qx, qy + 1], [qx, qy - 1]]) {
+        if (nx < 0 || ny < 0 || nx >= GX || ny >= GY) continue
+        const n = ny * GX + nx
+        if (on[n] && !seen[n]) {
+          seen[n] = true
+          stack.push(n)
+        }
+      }
+    }
+    if (size >= 2) elements++
+  }
   const coverage = Math.round((marked / total) * 1000) / 10
   const colors = hueBins
     .map((n, b) => ({ n, b }))
@@ -114,6 +149,7 @@ export async function analyzeImage(src: string): Promise<Computed> {
     quadrants: quads,
     centerOffset: Math.round(Math.hypot(cx, cy) * 100),
     edgeDensity: marked ? Math.round((edges / marked) * 100) : 0,
+    elements,
     proxies: {
       // קירוב בלבד, לא דירוג FEATS: אחוז הדף שסומן, ואחוז השטח הצבוע מתוך כל הדף
       space: toScore(coverage, [5, 15, 30, 50, 75]),

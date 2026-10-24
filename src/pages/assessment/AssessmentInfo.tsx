@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/PageHeader'
 import { FEATS, PPAT, agreement } from '../../content/feats'
 import { useAuth } from '../../logic/auth'
 import { listFinalAssessments } from '../../logic/data'
+import { autoPairs } from '../../assessment/auto'
 import '../../studio/Studio.css'
 import './Assessment.css'
 
@@ -13,7 +14,7 @@ const pct = (v: number) => `${Math.round(v * 100)}%`
 // הערכה מובנית: השיטה, המשימה, השכבות, המגבלות והמהימנות הנמדדת בפועל.
 export default function AssessmentInfo() {
   const { session } = useAuth()
-  const [pairs, setPairs] = useState<{ all: [number, number][]; byItem: Record<string, [number, number][]>; n: number } | null>(null)
+  const [pairs, setPairs] = useState<{ all: [number, number][]; byItem: Record<string, [number, number][]>; n: number; engine: [number, number][]; engineN: number } | null>(null)
 
   useEffect(() => {
     if (!session) return
@@ -22,7 +23,14 @@ export default function AssessmentInfo() {
         const all: [number, number][] = []
         const byItem: Record<string, [number, number][]> = {}
         let n = 0
+        const engine: [number, number][] = []
+        let engineN = 0
         for (const r of rows) {
+          const ap = autoPairs(r.computed?.auto?.feats, r.ratings)
+          if (ap.length) {
+            engineN++
+            engine.push(...ap)
+          }
           if (!r.ai_draft || !r.ratings) continue
           n++
           for (const it of r.ai_draft.items) {
@@ -32,18 +40,19 @@ export default function AssessmentInfo() {
             ;(byItem[it.id] ??= []).push([it.score, t])
           }
         }
-        setPairs({ all, byItem, n })
+        setPairs({ all, byItem, n, engine, engineN })
       })
       .catch(() => setPairs(null))
   }, [session])
 
   const total = pairs ? agreement(pairs.all) : null
+  const eng = pairs ? agreement(pairs.engine) : null
 
   return (
     <div className="page">
       <PageHeader kicker="הערכה מובנית" title="ניתוח יצירה שאפשר לבדוק">
-        ניתוח צורני של ציור **לפי מכשיר מחקרי, במשימה תקנית**, עם **שלוש שכבות שקופות**: מדידה ממוחשבת, טיוטת דירוג ודירוג המטפלת.
-        ==המערכת מודדת את ההסכמה בין הטיוטה למטפלת==, וכך בונה ראיה לאמינות הכלי לאורך זמן.
+        ניתוח צורני של ציור **לפי מכשיר מחקרי, במשימה תקנית**, עם **שלוש שכבות שקופות**: מדידה ממוחשבת, הערכה אוטומטית עם הסבר לכל פרמטר, ודירוג המטפלת.
+        ==המכשיר והמטפלת משווים הערכות==, וההסכמה ביניהם נמדדת ובונה ראיה לאמינות הכלי לאורך זמן.
       </PageHeader>
 
       <div className="grid grid-2" style={{ marginBottom: 'var(--s5)' }}>
@@ -84,9 +93,11 @@ export default function AssessmentInfo() {
           <p className="muted" style={{ margin: 0, fontSize: 14 }}>קוד בלבד, בלי מודל. אותה תמונה תמיד נותנת אותה תוצאה.</p>
         </div>
         <div className="panel stack" style={{ gap: 6 }}>
-          <div className="label">2 · טיוטת דירוג</div>
-          <p style={{ margin: 0 }}>מודל שפה עם ראייה (Claude) מדרג כל סולם, עם נימוק שמצביע על מה שנראה ורמת ביטחון.</p>
-          <p className="muted" style={{ margin: 0, fontSize: 14 }}>בלי אבחנה ובלי פרשנות סמלית. הטיוטה גלויה למטפלת בלבד.</p>
+          <div className="label">2 · הערכה אוטומטית</div>
+          <p style={{ margin: 0 }}>המנוע מתרגם את המדידות לציון בכל סולם שאפשר למדוד, לפי השיטה שנבחרה (FEATS או ETC), ומסביר: מה נמדד, איך חושב ומה המגבלה.</p>
+          <p className="muted" style={{ margin: 0, fontSize: 14 }}>
+            המטפלת בוחרת מי מוביל: המכשיר קודם, או היא קודם וההשוואה נפתחת אחר כך. סולמות שתלויים בזיהוי מה מצויר נשארים לה, ואפשר להיעזר בטיוטת Claude שרואה את התמונה.
+          </p>
         </div>
         <div className="panel stack" style={{ gap: 6 }}>
           <div className="label">3 · דירוג המטפלת</div>
@@ -98,17 +109,30 @@ export default function AssessmentInfo() {
       <h2 style={{ fontSize: 30 }}>מהימנות נמדדת</h2>
       {!session ? (
         <p className="notice">נתוני ההסכמה מוצגים אחרי כניסה.</p>
-      ) : !total ? (
-        <p className="notice">עדיין אין הערכות חתומות עם טיוטה. אחרי כל הערכה חתומה, ההסכמה בין הטיוטה לדירוג שלך מתעדכנת כאן.</p>
+      ) : !total && !eng ? (
+        <p className="notice">עדיין אין הערכות חתומות עם הערכה אוטומטית. אחרי כל הערכה חתומה, ההסכמה בין המכשיר לדירוג שלך מתעדכנת כאן.</p>
       ) : (
         <section className="panel stack" style={{ marginBottom: 'var(--s5)' }} data-testid="reliability">
-          <div className="stat-grid">
+          {eng && (
+            <>
+              <div className="label">המכשיר מול המטפלת</div>
+              <div className="stat-grid" data-testid="engine-reliability">
+                <div className="metric"><b>{pairs!.engineN}</b><span>הערכות חתומות</span></div>
+                <div className="metric"><b>{pct(eng.exact)}</b><span>הסכמה מלאה</span></div>
+                <div className="metric"><b>{pct(eng.within1)}</b><span>הסכמה בטווח נקודה</span></div>
+                <div className="metric"><b>{eng.mae.toFixed(2)}</b><span>הפרש ממוצע</span></div>
+                <div className="metric"><b>{eng.kappa === null ? '-' : eng.kappa.toFixed(2)}</b><span>קאפה משוקללת</span></div>
+              </div>
+            </>
+          )}
+          {total && <div className="label">טיוטת Claude מול המטפלת</div>}
+          {total && <div className="stat-grid">
             <div className="metric"><b>{pairs!.n}</b><span>הערכות חתומות</span></div>
             <div className="metric"><b>{pct(total.exact)}</b><span>הסכמה מלאה</span></div>
             <div className="metric"><b>{pct(total.within1)}</b><span>הסכמה בטווח נקודה</span></div>
             <div className="metric"><b>{total.mae.toFixed(2)}</b><span>הפרש ממוצע</span></div>
             <div className="metric"><b>{total.kappa === null ? '-' : total.kappa.toFixed(2)}</b><span>קאפה משוקללת</span></div>
-          </div>
+          </div>}
           <div className="trend">
             <table>
               <thead><tr><th>סולם</th><th>זוגות</th><th>הסכמה מלאה</th><th>בטווח נקודה</th><th>הפרש ממוצע</th></tr></thead>
