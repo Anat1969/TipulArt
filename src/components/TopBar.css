@@ -1,0 +1,104 @@
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--paper) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-bottom: 1px solid var(--line);
+  box-shadow: 0 10px 30px -24px rgba(0, 0, 0, 0.5);
+}
+
+.topbar-inner {
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 12px var(--s3);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.brand-col {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  justify-self: start;
+}
+.brand-text { display: grid; line-height: 1.1; }
+.brand-name {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+.brand-sub { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.04em; }
+
+.sys-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.sys-buttons > * { flex: 0 0 auto; }
+
+.nav-col {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.main-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  min-width: 0;
+}
+.nav-link {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  text-decoration: none;
+  font-size: 15px;
+  color: var(--ink-2);
+  border-bottom: 2px solid transparent;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.nav-link:hover { color: var(--ink); }
+.nav-link.active { color: var(--ink); border-bottom-color: var(--terracotta); font-weight: 500; }
+
+.account { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.account-mail { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+
+@media (min-width: 980px) {
+  .topbar-inner {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: end;
+    column-gap: var(--s5);
+    padding: 14px var(--s5);
+  }
+  .nav-col { border-top: 0; padding-top: 0; }
+}
+
+@media (max-width: 560px) {
+  .topbar-inner { gap: 8px; padding: 8px var(--s3); }
+  .brand-name { font-size: 22px; }
+  .brand .logo-mark { width: 36px; height: 36px; }
+  .sys-buttons .btn { min-height: 30px; padding: 0 9px; font-size: 12px; }
+  .nav-col { flex-wrap: nowrap; padding-top: 6px; }
+  .main-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; flex: 1 1 auto; }
+  .main-nav::-webkit-scrollbar { display: none; }
+  .nav-link { padding: 6px 8px; font-size: 14px; }
+  .account { flex: 0 0 auto; }
+  .account-mail { display: none; }
+}
