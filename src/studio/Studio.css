@@ -56,8 +56,8 @@
 .process-grid { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 720px) { .process-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .metric { padding: 10px 12px; background: var(--surface-solid); border: 1px solid var(--line); }
-.metric b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.1; }
-.metric span { font-size: 13px; color: var(--muted); }
+.metric b { display: block; font-family: var(--font-display); font-weight: 500; font-size: 30px; line-height: 1.05; color: var(--ink); }
+.metric span { font-size: 13px; font-weight: 500; color: var(--ink-2); }
 .tool-bars { display: grid; gap: 6px; }
 .tool-bar { display: grid; grid-template-columns: 90px minmax(0, 1fr) 48px; gap: 8px; align-items: center; font-size: 14px; }
 .tool-bar > i { display: block; height: 10px; background: var(--paper-3); position: relative; }

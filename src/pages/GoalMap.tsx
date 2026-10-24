@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
+import { Rich } from '../components/Rich'
 import { AnimatePresence, motion } from 'framer-motion'
 import { PageHeader } from '../components/PageHeader'
 import { GOALS, goalById, type GoalId } from '../content/goals'
@@ -15,7 +16,7 @@ export default function GoalMap() {
   return (
     <div className="page">
       <PageHeader kicker="הבנה" title="מפת מטרות">
-        בוחרים מטרה טיפולית ורואים אילו חומרים, משימות ורמות ETC מתחברים אליה. החיבור הוא הצעה לחשיבה, לא המלצה מבוססת ראיות.
+        בוחרים מטרה טיפולית ורואים אילו חומרים, משימות ורמות ETC מתחברים אליה. ==החיבור הוא הצעה לחשיבה, לא המלצה מבוססת ראיות.==
       </PageHeader>
 
       <div className="row" role="tablist" aria-label="מטרות" style={{ marginBottom: 'var(--s4)' }}>
@@ -39,11 +40,11 @@ export default function GoalMap() {
             <div className="panel">
               <div className="label">מטרה</div>
               <h2 style={{ fontSize: 34, margin: '6px 0' }}>{goal.label}</h2>
-              <p style={{ margin: 0 }}>{goal.summary}</p>
+              <p style={{ margin: 0, fontSize: 18 }}><Rich text={goal.summary} /></p>
             </div>
             <div className="panel">
               <div className="label">חומרים</div>
-              <p style={{ margin: '8px 0 0', fontSize: 20, fontFamily: 'var(--font-display)' }}>{goal.materials}</p>
+              <p className="value" style={{ margin: '8px 0 0', fontSize: 22, fontFamily: 'var(--font-display)' }}>{goal.materials}</p>
             </div>
             <div className="panel">
               <div className="label">רמות ETC שמופיעות</div>

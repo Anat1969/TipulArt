@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Rich } from '../../components/Rich'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../components/PageHeader'
 import { FEATS, PPAT, agreement } from '../../content/feats'
@@ -41,8 +42,8 @@ export default function AssessmentInfo() {
   return (
     <div className="page">
       <PageHeader kicker="הערכה מובנית" title="ניתוח יצירה שאפשר לבדוק">
-        ניתוח צורני של ציור לפי מכשיר מחקרי, במשימה תקנית, עם שלוש שכבות שקופות: מדידה ממוחשבת, טיוטת דירוג ודירוג המטפלת.
-        המערכת מודדת את ההסכמה בין הטיוטה למטפלת, וכך בונה ראיה לאמינות הכלי לאורך זמן.
+        ניתוח צורני של ציור **לפי מכשיר מחקרי, במשימה תקנית**, עם **שלוש שכבות שקופות**: מדידה ממוחשבת, טיוטת דירוג ודירוג המטפלת.
+        ==המערכת מודדת את ההסכמה בין הטיוטה למטפלת==, וכך בונה ראיה לאמינות הכלי לאורך זמן.
       </PageHeader>
 
       <div className="grid grid-2" style={{ marginBottom: 'var(--s5)' }}>
@@ -71,7 +72,7 @@ export default function AssessmentInfo() {
       <section className="panel stack" style={{ marginBottom: 'var(--s5)' }}>
         <div className="label">פרוטוקול העברה</div>
         <ol style={{ margin: 0, paddingInlineStart: 22, display: 'grid', gap: 6 }}>
-          {PPAT.protocol.map((p) => <li key={p}>{p}</li>)}
+          {PPAT.protocol.map((p) => <li key={p}><Rich text={p} /></li>)}
         </ol>
       </section>
 

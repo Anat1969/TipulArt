@@ -1,4 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom'
+import { Rich, plain } from '../components/Rich'
 import { motion } from 'framer-motion'
 import { PageHeader } from '../components/PageHeader'
 import { EVIDENCE_LABELS, POPULATIONS, TECHNIQUES } from '../content/techniques'
@@ -22,7 +23,7 @@ export default function Library() {
 
   const list = TECHNIQUES.filter(
     (t) =>
-      (!q || `${t.nameHe} ${t.nameEn} ${t.description} ${t.approach}`.toLowerCase().includes(q.toLowerCase())) &&
+      (!q || `${t.nameHe} ${t.nameEn} ${plain(t.description)} ${t.approach}`.toLowerCase().includes(q.toLowerCase())) &&
       (!pop || t.populations.includes(pop)) &&
       (!etc || t.etc.includes(etc as never)) &&
       (!goal || t.goals.includes(goal as never)),
@@ -31,7 +32,7 @@ export default function Library() {
   return (
     <div className="page">
       <PageHeader kicker="ידע" title="ספריית טכניקות">
-        גישה, רמה במודל ETC, אוכלוסיות ורמת ראיות לכל טכניקה. לכל טכניקה יש תרגיל שאפשר לתרגל לפני שמציעים אותו.
+        גישה, רמה במודל ETC, אוכלוסיות ו**רמת ראיות** לכל טכניקה. לכל טכניקה יש **תרגיל שאפשר לתרגל** לפני שמציעים אותו.
       </PageHeader>
 
       <div className="panel stack" style={{ marginBottom: 'var(--s5)' }}>
@@ -82,11 +83,11 @@ export default function Library() {
             <Link to={`/library/${t.id}`} className="panel technique-card" style={{ display: 'grid', gap: 8, textDecoration: 'none', height: '100%' }}>
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <span className="label">{t.approach}</span>
-                <span className="label">{EVIDENCE_LABELS[t.evidence].label}</span>
+                <span className="label kicker">{EVIDENCE_LABELS[t.evidence].label}</span>
               </div>
               <h3 style={{ margin: 0 }}>{t.nameHe}</h3>
               <span className="muted" style={{ fontSize: 14 }}>{t.nameEn} · {t.founder}</span>
-              <p style={{ margin: 0, color: 'var(--ink-2)' }}>{t.description}</p>
+              <p style={{ margin: 0, color: 'var(--ink-2)' }}><Rich text={t.description} /></p>
               <div className="row">
                 {t.etc.map((e) => (
                   <span key={e} className="label" style={{ textTransform: 'none' }}>

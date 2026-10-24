@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Rich } from '../../components/Rich'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { PageHeader } from '../../components/PageHeader'
 import { RequireAuth } from '../../components/RequireAuth'
@@ -60,7 +61,7 @@ function NewInner() {
       <details className="panel" style={{ marginBottom: 'var(--s4)' }}>
         <summary style={{ cursor: 'pointer' }}><span className="label">פרוטוקול העברה</span></summary>
         <ol style={{ margin: '10px 0 0', paddingInlineStart: 22, display: 'grid', gap: 4 }}>
-          {PPAT.protocol.map((p) => <li key={p}>{p}</li>)}
+          {PPAT.protocol.map((p) => <li key={p}><Rich text={p} /></li>)}
         </ol>
       </details>
 

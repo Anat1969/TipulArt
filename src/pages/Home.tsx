@@ -2,6 +2,7 @@ import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode 
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import { ETC_LEVELS } from '../content/etc'
+import { Rich } from '../components/Rich'
 import { TECHNIQUES } from '../content/techniques'
 import './Home.css'
 
@@ -36,20 +37,20 @@ const CHAPTERS = [
 const PATH = ['ספרייה', 'בחירת מטרה', 'תכנון מפגש', 'יצירה בסטודיו, במפגש או בבית', 'תצפית ותיעוד', 'ציר זמן']
 
 const TOOLS = [
-  { to: '/library', title: 'ספרייה וראיות', body: `${TECHNIQUES.length} טכניקות, גישה, רמת ETC ורמת ראיות לכל אחת. תרגיל אישי לכל טכניקה.` },
-  { to: '/map', title: 'מפת מטרות', body: 'מטרה טיפולית מחוברת לחומר, למשימה ולרמה במודל ETC.' },
-  { to: '/plan', title: 'מתכנן מפגש', body: 'קוד מטופל/ת, מטרה וטכניקה. התוכנית נכתבת מתוך התרגיל, עם שאלות לתהליך.' },
-  { to: '/studio', title: 'סטודיו', body: 'ציור בפחם, בצבע רטוב ובמריחה. הסטודיו רושם את התהליך ומציג אותו מההתחלה.' },
-  { to: '/clients', title: 'תרגול בבית', body: 'קישור אישי למטופל/ת, בלי חשבון. היצירה ותמונת התהליך מגיעות לציר הזמן.' },
-  { to: '/assessment', title: 'הערכה מובנית', body: 'משימה תקנית ודירוג לפי FEATS: מדידה ממוחשבת, טיוטת דירוג ודירוג המטפלת, עם מדד הסכמה.' },
-  { to: '/clients', title: 'ציר זמן', body: 'כל המפגשים של מטופל/ת אחד/ת, עם התמונות והרמות שנצפו.' },
+  { to: '/library', title: 'ספרייה וראיות', body: `**${TECHNIQUES.length} טכניקות**, גישה, רמת ETC ו**רמת ראיות** לכל אחת. תרגיל אישי לכל טכניקה.` },
+  { to: '/map', title: 'מפת מטרות', body: '**מטרה טיפולית** מחוברת לחומר, למשימה ולרמה במודל ETC.' },
+  { to: '/plan', title: 'מתכנן מפגש', body: 'קוד מטופל/ת, מטרה וטכניקה. **התוכנית נכתבת מתוך התרגיל**, עם שאלות לתהליך.' },
+  { to: '/studio', title: 'סטודיו', body: 'ציור בפחם, בצבע רטוב ובמריחה. **הסטודיו רושם את התהליך** ומציג אותו מההתחלה.' },
+  { to: '/clients', title: 'תרגול בבית', body: '**קישור אישי** למטופל/ת, בלי חשבון. היצירה ותמונת התהליך מגיעות לציר הזמן.' },
+  { to: '/assessment', title: 'הערכה מובנית', body: '**משימה תקנית ודירוג לפי FEATS**: מדידה ממוחשבת, טיוטת דירוג ודירוג המטפלת, עם **מדד הסכמה**.' },
+  { to: '/clients', title: 'ציר זמן', body: '**כל המפגשים** של מטופל/ת אחד/ת, עם התמונות והרמות שנצפו.' },
 ]
 
 const RESULTS = [
-  { k: 'דפוס', title: 'שינוי נראה לעין', body: 'הרמות שנצפו מוצגות לאורך המפגשים. רואים תנועה, או העדר תנועה.' },
-  { k: 'נימוק', title: 'בחירה שאפשר לשחזר', body: 'לכל מפגש נשמרו המטרה והטכניקה. ברור למה נבחר כל תרגיל.' },
-  { k: 'פרטיות', title: 'קוד בלבד', body: 'בלי שם, ת.ז. או פרטי קשר. תמונות בדלי פרטי, נפתחות בקישור זמני בלבד.' },
-  { k: 'כנות', title: 'ראיות כמות שהן', body: 'אפקט בינוני (SMD 0.38) במטא־אנליזה של 2024, רוב המחקרים באיכות נמוכה. אף טכניקה אינה מוצגת כ"מוכחת".' },
+  { k: 'דפוס', title: 'שינוי נראה לעין', body: 'הרמות שנצפו מוצגות לאורך המפגשים. **רואים תנועה, או העדר תנועה.**' },
+  { k: 'נימוק', title: 'בחירה שאפשר לשחזר', body: 'לכל מפגש נשמרו המטרה והטכניקה. **ברור למה נבחר כל תרגיל.**' },
+  { k: 'פרטיות', title: 'קוד בלבד', body: '**בלי שם, ת.ז. או פרטי קשר.** תמונות בדלי פרטי, נפתחות בקישור זמני בלבד.' },
+  { k: 'כנות', title: 'ראיות כמות שהן', body: 'אפקט בינוני (SMD 0.38) במטא־אנליזה של 2024, רוב המחקרים באיכות נמוכה. **אף טכניקה אינה מוצגת כ"מוכחת".**' },
 ]
 
 // הדגמת תצפיות: שמונה מפגשים לדוגמה, ארבע רמות. נתוני הדגמה בלבד.
@@ -154,8 +155,8 @@ export default function Home() {
             <span className="accent">TipulArt</span> שומר אותו.
           </h1>
           <p className="lede">
-            כלי עבודה למטפלת באמנות: בוחרים טכניקה לפי מטרה, מתכננים מפגש, מתעדים תמונה ותצפית, ורואים את הדרך של כל
-            מטופל/ת לאורך זמן.
+            כלי עבודה למטפלת באמנות: <strong>בוחרים טכניקה לפי מטרה</strong>, מתכננים מפגש, מתעדים תמונה ותצפית, ו
+            <strong>רואים את הדרך של כל מטופל/ת לאורך זמן</strong>.
           </p>
           <div className="row">
             <Link className="btn btn-primary" to="/plan">
@@ -192,9 +193,9 @@ export default function Home() {
             ובקבצים. כאן הוא מתחבר לציר אחד.
           </p>
           <ul className="ticks">
-            <li>לראות שינוי, או העדר שינוי, לאורך זמן.</li>
-            <li>לדעת למה נבחרה כל טכניקה.</li>
-            <li>האפליקציה אינה מאבחנת. היא עוזרת לתעד, לארגן ולחשוב.</li>
+            <li><strong>לראות שינוי</strong>, או העדר שינוי, לאורך זמן.</li>
+            <li><strong>לדעת למה</strong> נבחרה כל טכניקה.</li>
+            <li><mark className="hl">האפליקציה אינה מאבחנת.</mark> היא עוזרת לתעד, לארגן ולחשוב.</li>
           </ul>
         </motion.div>
       </section>
@@ -203,7 +204,7 @@ export default function Home() {
         <motion.div className="chapter-copy panel" {...reveal}>
           <div className="label">02 · מטרה</div>
           <h2>מפגש מתוכנן ומתועד בפחות מדקה.</h2>
-          <p>ידע, תכנון ותיעוד במקום אחד, במסלול קצר וקבוע:</p>
+          <p><strong>ידע, תכנון ותיעוד במקום אחד</strong>, במסלול קצר וקבוע:</p>
           <ol className="path">
             {PATH.map((s, i) => (
               <motion.li
@@ -238,7 +239,7 @@ export default function Home() {
                 <Link to={t.to} className="tool-card">
                   <span className="label">{String(i + 1).padStart(2, '0')}</span>
                   <h3>{t.title}</h3>
-                  <p>{t.body}</p>
+                  <p><Rich text={t.body} nums /></p>
                   <span className="tool-go">פתיחה</span>
                 </Link>
               </motion.div>
@@ -281,7 +282,7 @@ export default function Home() {
                 <div className="panel result" key={r.k}>
                   <span className="label">{r.k}</span>
                   <h3>{r.title}</h3>
-                  <p>{r.body}</p>
+                  <p><Rich text={r.body} nums /></p>
                 </div>
               ))}
             </div>
