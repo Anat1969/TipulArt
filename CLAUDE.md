@@ -66,3 +66,6 @@
 - הערכה מובנית: `tipul_assessments` (computed, process, ai_draft, ratings, status). טיוטת הדירוג בפונקציה `tipul-analyze` (Claude, `ANTHROPIC_API_KEY` המשותף, JWT של המטפלת, עד 40 בשעה). הקוד שלה ב-`supabase/functions/tipul-analyze`.
 - הסביבה לא מגיעה ל-supabase.co, ולכן את `tipul-analyze` אי אפשר לבדוק מכאן מול השרת. הבדיקה האוטומטית מדמה אותה.
 - `uipro init` נחסם במנגנון ההרשאות של הסביבה. אם נדרש, להריץ מקומית.
+
+## A&I logo button
+The top bar holds only the app name (links home), content navigation, and ONE logo button "אד' ענת שטיבלמן A&I" (`<ai-menu>` from https://appofapp-gh.vercel.app/ai-menu.js). Every editing and development action (העתקת קישור, שיחת הפיתוח, פרויקט המחקר, התקנת האפליקציה, edit mode, add, delete) lives only inside it, never as loose buttons. Standard: https://github.com/Anat1969/AppOfApp-GH/blob/main/docs/ai-menu-standard.md

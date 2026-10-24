@@ -180,7 +180,17 @@ async function noHorizontalScroll(page, label) {
   ok(sw <= cw + 1, `${label}: אין גלילה אופקית (${sw} <= ${cw})`)
 }
 
-const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })
+const _launch = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] })
+
+// ai-menu.js: AI_MENU_JS מפנה לקובץ מקומי כשהרשת חסומה.
+const browser = {
+  newContext: async (o) => {
+    const c = await _launch.newContext(o)
+    if (process.env.AI_MENU_JS) await c.route('https://appofapp-gh.vercel.app/ai-menu.js', (r) => r.fulfill({ path: process.env.AI_MENU_JS, contentType: 'application/javascript' }))
+    return c
+  },
+  close: () => _launch.close(),
+}
 
 // ---------- שולחן עבודה, משתמשת לא מחוברת ----------
 {
@@ -198,22 +208,23 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   ok(await page.locator('canvas').count() === 1, 'סצנת תלת־ממד נטענה')
   await page.screenshot({ path: OUT + 'home-desktop-0.png' })
 
-  // כפתורי מערכת מתחת ללוגו
-  ok(await page.locator('[data-testid=copy-link]').count() === 0, 'בסרגל רואים רק את הלוגו, בלי כפתורים')
-  ok((await page.locator('[data-testid=anat-button]').innerText()).includes("אד' ענת שטיבלמן"), 'כפתור הלוגו של ענת מוצג')
-  await page.locator('[data-testid=anat-button]').click()
+  // כפתורי מערכת מתחת ללוגו (ai-menu)
+  ok(await page.locator('header >> text=העתקת קישור').count() === 0, 'בסרגל רואים רק את הלוגו, בלי כפתורים')
+  ok(await page.locator('ai-menu .logo').isVisible(), 'כפתור הלוגו של ענת מוצג')
+  await page.locator('ai-menu .logo').click()
   const inLogo = await page.evaluate(() => {
-    const logo = document.querySelector('[data-testid=anat-menu]')
-    return ['copy-link', 'dev-chat', 'research', 'auth-btn'].every((id) => logo?.contains(document.querySelector(`[data-testid=${id}]`)))
+    const t = document.querySelector('ai-menu')?.shadowRoot?.querySelector('.panel')?.textContent || ''
+    return ['העתקת קישור', 'שיחת הפיתוח', 'פרויקט המחקר', 'כניסה'].every((x) => t.includes(x))
   })
   ok(inLogo, 'לחיצה על הלוגו פותחת את כל כפתורי המערכת והכניסה')
   await page.keyboard.press('Escape')
-  ok(await page.locator('[data-testid=anat-menu]').count() === 0, 'Escape סוגר את התפריט')
-  await page.locator('[data-testid=anat-button]').click()
-  const radius = await page.locator('[data-testid=copy-link]').evaluate((el) => getComputedStyle(el).borderRadius)
-  ok(radius === '0px', `כפתורים מרובעים (border-radius ${radius})`)
-  ok((await page.locator('[data-testid=dev-chat]').getAttribute('href')).includes('claude.ai/code/session_'), 'שיחת הפיתוח מקשרת לשיחה')
-  ok((await page.locator('[data-testid=research]').getAttribute('href')) === 'https://claude.ai/chat/61b5f6c0-8394-4c37-a232-4fed2c479392', 'פרויקט המחקר מקשר לפרויקט')
+  ok(!(await page.locator('ai-menu .panel').isVisible()), 'Escape סוגר את התפריט')
+  const radius = await page.locator('ai-menu .logo').evaluate((el) => getComputedStyle(el).borderRadius)
+  ok(radius === '0px', `כפתור הלוגו מרובע (border-radius ${radius})`)
+  await page.locator('ai-menu .logo').click()
+  ok((await page.locator('ai-menu a.item:has-text("שיחת הפיתוח")').getAttribute('href')).includes('claude.ai/code/session_'), 'שיחת הפיתוח מקשרת לשיחה')
+  ok((await page.locator('ai-menu a.item:has-text("פרויקט המחקר")').getAttribute('href')) === 'https://claude.ai/chat/61b5f6c0-8394-4c37-a232-4fed2c479392', 'פרויקט המחקר מקשר לפרויקט')
+  await page.keyboard.press('Escape')
 
   for (const id of ['vision', 'goal', 'tools', 'results']) {
     await page.locator(`#${id}`).scrollIntoViewIfNeeded()
@@ -223,9 +234,9 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   }
   ok(await page.locator('.chapter-rail a.on').count() === 1, 'מסילת הפרקים מסמנת פרק פעיל')
 
-  if (!(await page.locator('[data-testid=anat-menu]').count())) await page.locator('[data-testid=anat-button]').click()
-  await page.locator('[data-testid=copy-link]').click()
-  ok(await page.waitForSelector('[data-testid=copy-link]:has-text("הועתק")', { timeout: 3000 }).then(() => true, () => false), 'העתקת קישור מגיבה')
+  await page.locator('ai-menu .logo').click()
+  await page.locator('ai-menu .item:has-text("העתקת קישור")').click()
+  ok(await page.waitForSelector('ai-menu .note:has-text("הועתק")', { timeout: 3000 }).then(() => true, () => false), 'העתקת קישור מגיבה')
   const clip = await page.evaluate(() => navigator.clipboard.readText())
   ok(clip.startsWith(BASE), 'הקישור שהועתק הוא הכתובת הנוכחית')
 
@@ -263,8 +274,8 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
 
   await page.getByRole('link', { name: 'מתכנן מפגש' }).click()
   ok(await page.waitForSelector('text=האזור הזה אישי', { timeout: 5000 }).then(() => true, () => false), 'מתכנן ללא כניסה מציג הסבר וכניסה')
-  await page.locator('[data-testid=anat-button]').click()
-  await page.locator('[data-testid=auth-btn]').click()
+  await page.locator('ai-menu .logo').click()
+  await page.locator('ai-menu .item:has-text("כניסה")').click()
   ok(await page.waitForSelector('input[type=password]', { timeout: 5000 }).then(() => true, () => false), 'דף כניסה עם אימייל וסיסמה')
   ok(await page.getByText('כניסה עם Google').count() === 0, 'Google כבוי: הכפתור מוסתר')
 
@@ -340,10 +351,10 @@ const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=sw
   ok(requests.some((r) => r.startsWith('POST tipul_practice')), 'סימון תרגול נשמר')
   ok((await page.locator('[data-testid=practice]').innerText()) === 'תרגלתי', 'כפתור התרגול מתעדכן')
 
-  await page.locator('[data-testid=anat-button]').click()
-  await page.locator('[data-testid=auth-btn]').click()
-  await page.locator('[data-testid=anat-button]').click()
-  await page.waitForSelector('[data-testid=auth-btn]:has-text("כניסה")')
+  await page.locator('ai-menu .logo').click()
+  await page.locator('ai-menu .item:has-text("יציאה")').click()
+  await page.locator('ai-menu .logo').click()
+  await page.waitForSelector('ai-menu .item:has-text("כניסה")')
   ok(true, 'יציאה מחזירה כפתור כניסה')
   ok(errors.length === 0, `אין שגיאות דף ${errors.join(' | ')}`)
   await context.close()
@@ -458,7 +469,7 @@ async function draw(page, tool) {
   await pp.waitForSelector('[data-testid=studio-canvas]')
   ok(await pp.locator('.main-nav').count() === 0, 'דף המטופל/ת: בלי ניווט של המטפלת')
   await pp.locator('[data-testid=anat-button]').click()
-  ok(await pp.locator('[data-testid=dev-chat]').count() === 0, 'דף המטופל/ת: הלוגו בלי כפתורי עריכה')
+  ok(await pp.locator('ai-menu').count() === 0, 'דף המטופל/ת: הלוגו בלי כפתורי עריכה')
   ok(await pp.getByText('1201').count() >= 1, 'דף המטופל/ת: מספר ער"ן מוצג')
   await draw(pp, 'charcoal')
   await draw(pp, 'wet')
