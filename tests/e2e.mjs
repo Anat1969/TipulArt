@@ -446,6 +446,17 @@ async function draw(page, tool) {
   await page.locator('[data-testid=replay]').click()
   await page.waitForTimeout(500)
   ok(true, 'שחזור התהליך רץ')
+  // הערכה אוטומטית מיד אחרי היצירה, לפי שיטה
+  await page.locator('[data-testid=studio-auto-feats]').click()
+  await page.waitForSelector('[data-testid=auto-report-feats]')
+  const spaceItem = page.locator('[data-testid=auto-space]')
+  ok(await spaceItem.locator('.score-badge').count() === 1 && (await spaceItem.innerText()).includes('איך חושב') && (await spaceItem.innerText()).includes('מגבלה'), 'FEATS אוטומטי: ציון, הסבר החישוב ומגבלה לכל פרמטר')
+  ok(await page.locator('[data-testid=auto-line_quality] .score-badge').count() === 1, 'FEATS אוטומטי: איכות הקו נמדדת מהתהליך')
+  ok((await page.locator('[data-testid=auto-realism]').innerText()).includes('לא נמדד ממוחשבית'), 'FEATS אוטומטי: סולם תוכן נשאר למטפלת')
+  await page.locator('[data-testid=studio-auto-etc]').click()
+  await page.waitForSelector('[data-testid=auto-report-etc]')
+  ok(await page.locator('[data-testid=auto-report-etc] .auto-item').count() === 4, 'ETC אוטומטי: ארבע רמות')
+  await page.screenshot({ path: OUT + 'studio-auto.png', fullPage: true })
   await page.screenshot({ path: OUT + 'studio-process.png', fullPage: true })
 
   // מטפלת יוצרת קישור לבית
@@ -561,10 +572,20 @@ async function draw(page, tool) {
   await page.waitForSelector('text=חסר דירוג')
   ok(true, 'חתימה חסומה עד שכל הסולמות דורגו')
 
+  // המכשיר מוביל: הערכה אוטומטית עם הסבר, נשמרת בהערכה
+  await page.locator('[data-testid=run-auto]').click()
+  await page.waitForSelector('[data-testid=auto-report-feats]')
+  ok(db.tipul_assessments[0].computed?.auto?.feats?.items?.length === 14 && db.tipul_assessments[0].computed.autoLead === 'machine', 'ההערכה האוטומטית נשמרה עם 14 סולמות')
+  ok(await page.locator('[data-testid=auto-row-space]').count() === 1, 'הציון האוטומטי מוצג ליד הדירוג שלך')
+  await page.locator('[data-testid=method-etc]').click()
+  await page.waitForSelector('[data-testid=auto-report-etc]')
+  ok(true, 'מעבר לשיטת ETC')
+  await page.locator('[data-testid=method-feats]').click()
+
   await page.locator('[data-testid=run-ai]').click()
   await page.waitForSelector('text=תיאור צורני לדוגמה.')
   ok(requests.includes('FN tipul-analyze'), 'טיוטת הדירוג מופקת בפונקציית השרת')
-  ok(await page.locator('.score-badge').count() === 14, 'טיוטה לכל 14 הסולמות')
+  ok(await page.locator('.score-badge[title="טיוטת הדירוג"]').count() === 14, 'טיוטה לכל 14 הסולמות')
   const ids = ['prominence_of_color','color_fit','implied_energy','space','integration','logic','realism','problem_solving','developmental_level','details','line_quality','person','rotation','perseveration']
   for (const [i, id] of ids.entries()) await page.locator(`[data-testid=rate-${id}-${i % 3 === 0 ? (i % 6) : Math.min(5, (i % 6) + 1)}]`).click()
   await page.screenshot({ path: OUT + 'assessment.png', fullPage: true })
@@ -577,6 +598,7 @@ async function draw(page, tool) {
   await page.waitForSelector('[data-testid=reliability]')
   const kappaText = await page.locator('[data-testid=reliability] .metric').nth(4).locator('b').innerText()
   ok(kappaText !== '-', `דף המהימנות מחשב קאפה (${kappaText})`)
+  ok(await page.locator('[data-testid=engine-reliability]').count() === 1, 'מהימנות המכשיר מול המטפלת')
   await page.screenshot({ path: OUT + 'assessment-info.png', fullPage: true })
 
   // צילום של ציור מנייר
@@ -588,6 +610,15 @@ async function draw(page, tool) {
   await page.waitForURL(/\/assessments\//, { timeout: 15000 })
   await page.waitForSelector('[data-testid=computed]')
   ok(db.tipul_assessments[1]?.mode === 'photo' && db.tipul_assessments[1].process === null, 'הערכה מצילום נייר, בלי נתוני תהליך')
+  // המטפלת מובילה: ההשוואה נפתחת רק אחרי שכל הסולמות דורגו
+  await page.locator('[data-testid=lead-therapist]').click()
+  await page.waitForSelector('[data-testid=reveal-auto]')
+  ok(await page.locator('[data-testid=reveal-auto]').isDisabled() && db.tipul_assessments[1].computed?.autoLead === 'therapist', 'המטפלת מובילה: ההערכה האוטומטית נעולה עד הדירוג')
+  for (const id of ['prominence_of_color','color_fit','implied_energy','space','integration','logic','realism','problem_solving','developmental_level','details','line_quality','person','rotation','perseveration']) await page.locator(`[data-testid=rate-${id}-2]`).click()
+  await page.locator('[data-testid=reveal-auto]').click()
+  await page.waitForSelector('[data-testid=auto-report-feats]')
+  ok((await page.locator('[data-testid=auto-report-feats]').innerText()).includes('הדירוג שלך'), 'אחרי הדירוג: השוואה בין המכשיר למטפלת')
+  ok((await page.locator('[data-testid=auto-line_quality]').innerText()).includes('לא נמדד'), 'בצילום: איכות הקו לא נמדדת')
 
   // משימה תקנית בבית
   await page.goto(BASE + `/clients/${clientId}`)
