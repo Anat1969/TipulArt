@@ -123,16 +123,39 @@ textarea:focus-visible {
   appearance: none;
   display: inline-flex;
   align-items: center;
-  min-height: 34px;
+  min-height: 36px;
   padding: 0 12px;
   border: 1px solid var(--line-strong);
-  background: transparent;
+  background: linear-gradient(180deg, var(--surface-solid), color-mix(in srgb, var(--paper-2) 60%, var(--surface-solid)));
   color: var(--ink-2);
   font: 400 14px/1 var(--font-body);
   cursor: pointer;
-  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
-.chip[aria-pressed='true'] { background: var(--charcoal); color: var(--paper); border-color: var(--charcoal); }
+.chip:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); color: var(--ink); }
+.chip:active { transform: translateY(0); box-shadow: var(--shadow-press); }
+.chip[aria-pressed='true'] { background: var(--charcoal); color: var(--paper); border-color: var(--charcoal); box-shadow: var(--shadow-press); }
+
+/* כל מה שלוחצים עליו מרגיש כמו כפתור: צל, הרמה בריחוף, שקיעה בלחיצה */
+a.panel,
+.pick,
+.swatch,
+.tool-card,
+.tl-card {
+  cursor: pointer;
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+a.panel:hover,
+.pick:hover,
+.tl-card:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(34, 31, 27, 0.08), 0 26px 50px -18px rgba(34, 31, 27, 0.32); border-color: var(--line-strong); }
+.swatch:hover { transform: translateY(-2px) scale(1.06); box-shadow: var(--shadow-2); }
+a.panel:active,
+.pick:active,
+.swatch:active,
+.tl-card:active { transform: translateY(0); box-shadow: var(--shadow-press); }
+summary { cursor: pointer; }
+summary:hover .label { color: var(--ink); }
 
 .panel {
   background: var(--surface);

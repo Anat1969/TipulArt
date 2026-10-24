@@ -16,6 +16,7 @@ const NAV = [
   { to: '/library', label: 'ספרייה' },
   { to: '/map', label: 'מפת מטרות' },
   { to: '/studio', label: 'סטודיו' },
+  { to: '/assessment', label: 'הערכה' },
   { to: '/plan', label: 'מתכנן מפגש' },
   { to: '/clients', label: 'מטופלים' },
   { to: '/evidence', label: 'ראיות' },

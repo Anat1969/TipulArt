@@ -3,6 +3,7 @@ import './Studio.css'
 import { H, W, clearPaper, drawDot, drawSegment, fmtSec, type ProcessRecord, type Tool } from './engine'
 
 const TOOL_LABELS: Record<Tool, { label: string; etc: string; color: string }> = {
+  marker: { label: 'טוש', etc: 'חומר נשלט', color: 'var(--etc-cs)' },
   charcoal: { label: 'פחם', etc: 'חומר נשלט', color: 'var(--etc-cs)' },
   wet: { label: 'צבע רטוב', etc: 'חומר זורם', color: 'var(--etc-ks)' },
   smudge: { label: 'מריחה', etc: 'מגע', color: 'var(--etc-pa)' },
@@ -23,7 +24,7 @@ export function ProcessView({ process, compact = false }: { process: ProcessReco
     const c = canvasRef.current
     if (!c) return
     const ctx = c.getContext('2d', { willReadFrequently: true })!
-    clearPaper(ctx)
+    clearPaper(ctx, process.w === 1200 && process.h === 800 ? '#ffffff' : undefined)
     cancelAnimationFrame(raf.current)
     const strokes = process.strokes
     if (!strokes.length) return
@@ -64,7 +65,7 @@ export function ProcessView({ process, compact = false }: { process: ProcessReco
         <div className="metric"><b>{s.centerShare}%</b><span>מהסימון במרכז הדף</span></div>
       </div>
       <div className="tool-bars">
-        {(Object.keys(TOOL_LABELS) as Tool[]).map((t) => (
+        {(Object.keys(TOOL_LABELS) as Tool[]).filter((t) => t !== 'marker' || s.toolSec.marker).map((t) => (
           <div className="tool-bar" key={t}>
             <span>{TOOL_LABELS[t].label}</span>
             <i><em style={{ width: `${(s.toolSec[t] / totalTool) * 100}%`, background: TOOL_LABELS[t].color }} /></i>
@@ -79,7 +80,7 @@ export function ProcessView({ process, compact = false }: { process: ProcessReco
       </div>
       {!compact && (
         <div className="stack" style={{ gap: 8 }}>
-          <canvas ref={canvasRef} width={W} height={H} className="replay-canvas" aria-label="שחזור תהליך היצירה" />
+          <canvas ref={canvasRef} width={process.w || W} height={process.h || H} className="replay-canvas" style={{ aspectRatio: `${process.w || W} / ${process.h || H}` }} aria-label="שחזור תהליך היצירה" />
           <div>
             <button type="button" className="btn btn-sm" onClick={replay} disabled={playing} data-testid="replay">
               {playing ? 'מציג את התהליך' : 'הצגת התהליך מההתחלה'}

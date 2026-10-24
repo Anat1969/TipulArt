@@ -8,6 +8,7 @@ import { goalById } from '../content/goals'
 import { techniqueById } from '../content/techniques'
 import { deleteClient, getClient, listClientSessions, signedUrls, type Client, type SessionRow } from '../logic/data'
 import { HomeChannel } from '../components/HomeChannel'
+import { AssessmentsSection } from '../components/AssessmentsSection'
 import './ClientTimeline.css'
 
 function TimelineInner() {
@@ -48,6 +49,8 @@ function TimelineInner() {
         <Link className="btn btn-primary" to={`/plan?client=${client.id}`}>מפגש חדש</Link>
         <button type="button" className="btn btn-quiet" onClick={remove}>מחיקת מטופל/ת</button>
       </div>
+
+      <AssessmentsSection clientId={client.id} />
 
       <HomeChannel clientId={client.id} />
 

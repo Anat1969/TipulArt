@@ -9,3 +9,7 @@
 -- tipul_studio_home (24.10.2026): עמודת process ב-tipul_artworks, טבלאות tipul_home_links ו-tipul_home_submissions,
 -- פונקציות security definer: tipul_home_link_open, tipul_home_get, tipul_home_submit (anon לפי מפתח בלבד),
 -- מדיניות אחסון home/{token}/ להעלאה של מטופל/ת ולקריאה של המטפלת בלבד.
+
+-- tipul_assessments (24.10.2026): הערכה מובנית FEATS. computed, process, ai_draft, ratings, status draft/final, RLS לפי therapist_id.
+-- tipul_home_links.task ('free' | 'ppat'), ו-tipul_home_get מחזירה גם task.
+-- פונקציית Edge: tipul-analyze, קוד ב-supabase/functions/tipul-analyze/index.ts.

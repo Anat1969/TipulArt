@@ -3,12 +3,13 @@ import { useParams } from 'react-router-dom'
 import { Studio, type StudioResult } from '../studio/Studio'
 import { ALL_EXERCISES, techniqueById } from '../content/techniques'
 import { getHomeExercise, submitHomeWork, type HomePublic } from '../logic/data'
+import { compressImage } from '../logic/image'
 
 // דף המטופל/ת בבית. נפתח בקישור אישי, בלי חשבון ובלי פרטים מזהים.
 export default function HomeExercise() {
   const { token = '' } = useParams()
   const [ex, setEx] = useState<HomePublic | null | undefined>(undefined)
-  const [result, setResult] = useState<StudioResult | null>(null)
+  const [result, setResult] = useState<(Omit<StudioResult, 'process'> & { process: StudioResult['process'] | null }) | null>(null)
   const [answers, setAnswers] = useState<string[]>([])
   const [consent, setConsent] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -78,7 +79,7 @@ export default function HomeExercise() {
   return (
     <div className="page">
       <div className="label">תרגול בבית · מהמטפלת שלך</div>
-      <h1 style={{ fontSize: 'clamp(34px, 5vw, 60px)' }}>{exercise?.title ?? technique?.nameHe ?? 'תרגיל יצירה'}</h1>
+      <h1 style={{ fontSize: 'clamp(34px, 5vw, 60px)' }}>{ex.task === 'ppat' ? 'משימת ציור' : exercise?.title ?? technique?.nameHe ?? 'תרגיל יצירה'}</h1>
 
       <section className="panel stack" style={{ marginBottom: 'var(--s4)', borderInlineStart: '3px solid var(--terracotta)' }}>
         <div className="label">ההנחיה</div>
@@ -90,7 +91,28 @@ export default function HomeExercise() {
       </section>
 
       {!result ? (
-        <Studio onFinish={setResult} finishLabel="סיימתי לצייר" />
+        <>
+          <Studio onFinish={setResult} finishLabel="סיימתי לצייר" standard={ex.task === 'ppat'} />
+          <section className="panel stack" style={{ marginTop: 'var(--s4)' }}>
+            <div className="label">ציירתי על נייר</div>
+            <label className="field">
+              <span>העלאת צילום של הציור: אור יום, מלמעלה, הדף ממלא את התמונה</span>
+              <input
+                className="input"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                data-testid="home-photo"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0]
+                  if (!f) return
+                  const blob = await compressImage(f, 2000, 0.9)
+                  setResult({ blob, dataUrl: URL.createObjectURL(blob), process: null })
+                }}
+              />
+            </label>
+          </section>
+        </>
       ) : (
         <div className="grid grid-2">
           <section className="panel stack">

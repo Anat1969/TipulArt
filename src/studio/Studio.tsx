@@ -15,19 +15,26 @@ import {
   type Stroke,
   type Tool,
 } from './engine'
+import { PPAT } from '../content/feats'
 import './Studio.css'
 
 export type StudioResult = { blob: Blob; dataUrl: string; process: ProcessRecord }
 
 // סטודיו לציור. מקליט כל קו עם זמן, כדי שאפשר יהיה לראות את התהליך ולא רק את התוצר.
-export function Studio({ onFinish, finishLabel = 'סיום היצירה' }: { onFinish: (r: StudioResult) => void; finishLabel?: string }) {
+// standard: מצב משימה תקנית. דף לבן 3:2, טוש בלבד, 12 צבעים קבועים, בלי עזרים.
+export function Studio({ onFinish, finishLabel = 'סיום היצירה', standard = false }: { onFinish: (r: StudioResult) => void; finishLabel?: string; standard?: boolean }) {
+  const cw = standard ? 1200 : W
+  const ch = standard ? 800 : H
+  const paper = standard ? '#ffffff' : undefined
+  const tools = standard ? [{ id: 'marker' as Tool, label: 'טוש', hint: 'טוש אחיד' }] : TOOLS
+  const colors = standard ? PPAT.palette : COLORS
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const strokesRef = useRef<Stroke[]>([])
   const current = useRef<Stroke | null>(null)
   const openedAt = useRef(performance.now())
   const pointCount = useRef(0)
-  const [tool, setTool] = useState<Tool>('charcoal')
-  const [color, setColor] = useState(COLORS[0])
+  const [tool, setTool] = useState<Tool>(standard ? 'marker' : 'charcoal')
+  const [color, setColor] = useState(standard ? PPAT.palette[0] : COLORS[0])
   const [size, setSize] = useState(16)
   const [guide, setGuide] = useState(false)
   const [elapsed, setElapsed] = useState(0)
@@ -36,14 +43,14 @@ export function Studio({ onFinish, finishLabel = 'סיום היצירה' }: { on
 
   useEffect(() => {
     const ctx = canvasRef.current!.getContext('2d', { willReadFrequently: true })!
-    clearPaper(ctx)
+    clearPaper(ctx, paper)
     const id = setInterval(() => setElapsed(Math.floor((performance.now() - openedAt.current) / 1000)), 1000)
     return () => clearInterval(id)
   }, [])
 
   const toCanvas = (e: RPointerEvent<HTMLCanvasElement>) => {
     const r = canvasRef.current!.getBoundingClientRect()
-    return [((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H] as const
+    return [((e.clientX - r.left) / r.width) * cw, ((e.clientY - r.top) / r.height) * ch] as const
   }
 
   const down = (e: RPointerEvent<HTMLCanvasElement>) => {
@@ -80,7 +87,7 @@ export function Studio({ onFinish, finishLabel = 'סיום היצירה' }: { on
 
   const clearAll = () => {
     if (!confirm('לנקות את הדף? התהליך שנרשם עד עכשיו יימחק.')) return
-    clearPaper(canvasRef.current!.getContext('2d')!)
+    clearPaper(canvasRef.current!.getContext('2d')!, paper)
     strokesRef.current = []
     pointCount.current = 0
     openedAt.current = performance.now()
@@ -94,8 +101,8 @@ export function Studio({ onFinish, finishLabel = 'סיום היצירה' }: { on
     const strokes = strokesRef.current
     const process: ProcessRecord = {
       v: 1,
-      w: W,
-      h: H,
+      w: cw,
+      h: ch,
       openedAt: 0,
       finishedAt: Math.round(finishedAt - openedAt.current),
       strokes,
@@ -111,7 +118,7 @@ export function Studio({ onFinish, finishLabel = 'סיום היצירה' }: { on
         <div className="studio-group">
           <span className="label">חומר</span>
           <div className="row">
-            {TOOLS.map((t) => (
+            {tools.map((t) => (
               <button key={t.id} type="button" className="chip" aria-pressed={tool === t.id} title={t.hint} onClick={() => setTool(t.id)} data-testid={`tool-${t.id}`}>
                 {t.label}
               </button>
@@ -121,7 +128,7 @@ export function Studio({ onFinish, finishLabel = 'סיום היצירה' }: { on
         <div className="studio-group">
           <span className="label">צבע</span>
           <div className="row swatches">
-            {COLORS.map((c) => (
+            {colors.map((c) => (
               <button
                 key={c}
                 type="button"
@@ -131,7 +138,7 @@ export function Studio({ onFinish, finishLabel = 'סיום היצירה' }: { on
                 style={{ background: c }}
                 onClick={() => {
                   setColor(c)
-                  if (tool === 'eraser' || tool === 'smudge') setTool('charcoal')
+                  if (tool === 'eraser' || tool === 'smudge') setTool(standard ? 'marker' : 'charcoal')
                 }}
               />
             ))}
@@ -147,7 +154,7 @@ export function Studio({ onFinish, finishLabel = 'סיום היצירה' }: { on
             ))}
           </div>
         </div>
-        <div className="studio-group">
+        {!standard && <div className="studio-group">
           <span className="label">דף</span>
           <div className="row">
             <button type="button" className="chip" aria-pressed={guide} onClick={() => setGuide((g) => !g)}>
@@ -160,14 +167,14 @@ export function Studio({ onFinish, finishLabel = 'סיום היצירה' }: { on
               {full ? 'מסך רגיל' : 'מסך מלא'}
             </button>
           </div>
-        </div>
+        </div>}
       </div>
 
-      <div className="studio-paper">
+      <div className="studio-paper" style={{ aspectRatio: `${cw} / ${ch}`, background: paper }}>
         <canvas
           ref={canvasRef}
-          width={W}
-          height={H}
+          width={cw}
+          height={ch}
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
