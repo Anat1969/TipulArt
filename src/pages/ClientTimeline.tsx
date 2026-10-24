@@ -7,6 +7,7 @@ import { ETC_LEVELS } from '../content/etc'
 import { goalById } from '../content/goals'
 import { techniqueById } from '../content/techniques'
 import { deleteClient, getClient, listClientSessions, signedUrls, type Client, type SessionRow } from '../logic/data'
+import { HomeChannel } from '../components/HomeChannel'
 import './ClientTimeline.css'
 
 function TimelineInner() {
@@ -47,6 +48,8 @@ function TimelineInner() {
         <Link className="btn btn-primary" to={`/plan?client=${client.id}`}>מפגש חדש</Link>
         <button type="button" className="btn btn-quiet" onClick={remove}>מחיקת מטופל/ת</button>
       </div>
+
+      <HomeChannel clientId={client.id} />
 
       {!!sessions.length && (
         <section className="panel etc-strip" aria-label="תצפיות לפי רמה לאורך המפגשים">

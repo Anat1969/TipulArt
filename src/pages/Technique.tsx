@@ -107,6 +107,7 @@ export default function Technique() {
                   ) : (
                     <Link className="btn" to="/login">כניסה כדי לסמן תרגול</Link>
                   )}
+                  <Link className="btn" to={`/studio?exercise=${ex.id}`} data-testid="practice-studio">תרגול בסטודיו</Link>
                   <Link className="btn btn-primary" to={`/plan?technique=${t.id}`}>תכנון מפגש עם הטכניקה</Link>
                 </div>
                 {err && <p className="error">{err}</p>}

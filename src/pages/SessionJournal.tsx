@@ -5,6 +5,7 @@ import { RequireAuth } from '../components/RequireAuth'
 import { ETC_LEVELS, etcById, type EtcLevel } from '../content/etc'
 import { goalById } from '../content/goals'
 import { techniqueById } from '../content/techniques'
+import { ProcessView } from '../studio/ProcessView'
 import {
   addObservation,
   deleteArtwork,
@@ -136,6 +137,9 @@ function JournalInner() {
               </label>
             )}
             <small className="muted">התמונה נדחסת לפני העלאה ונשמרת בדלי פרטי. היא נפתחת בקישור זמני בלבד.</small>
+            <Link className="btn" style={{ justifySelf: 'start' }} to={`/studio?session=${s.id}${t?.exercises[0] ? `&exercise=${t.exercises[0].id}` : ''}`} data-testid="open-studio">
+              יצירה בסטודיו בתוך המפגש
+            </Link>
             {!!s.tipul_artworks?.length && (
               <div className="grid grid-2" style={{ gap: 'var(--s2)' }}>
                 {s.tipul_artworks.map((a) => (
@@ -185,6 +189,12 @@ function JournalInner() {
               </div>
             ))}
           </div>
+
+          {s.tipul_artworks?.filter((a) => a.process).map((a) => (
+            <div key={a.id} className="panel">
+              <ProcessView process={a.process!} />
+            </div>
+          ))}
 
           {!!s.tipul_observations?.length && (
             <div className="panel stack" style={{ gap: 8 }}>

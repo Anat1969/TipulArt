@@ -12,6 +12,8 @@ const Clients = lazy(() => import('./pages/Clients'))
 const ClientTimeline = lazy(() => import('./pages/ClientTimeline'))
 const Planner = lazy(() => import('./pages/Planner'))
 const SessionJournal = lazy(() => import('./pages/SessionJournal'))
+const StudioPage = lazy(() => import('./pages/StudioPage'))
+const HomeExercise = lazy(() => import('./pages/HomeExercise'))
 
 const TITLES: [RegExp, string][] = [
   [/^\/library\/.+/, 'טכניקה'],
@@ -23,6 +25,8 @@ const TITLES: [RegExp, string][] = [
   [/^\/clients/, 'מטופלים'],
   [/^\/sessions/, 'יומן מפגש'],
   [/^\/login/, 'כניסה'],
+  [/^\/studio/, 'סטודיו'],
+  [/^\/home\//, 'תרגול בבית'],
 ]
 
 function NotFound() {
@@ -58,6 +62,8 @@ export default function App() {
             <Route path="/clients" element={<Clients />} />
             <Route path="/clients/:id" element={<ClientTimeline />} />
             <Route path="/sessions/:id" element={<SessionJournal />} />
+            <Route path="/studio" element={<StudioPage />} />
+            <Route path="/home/:token" element={<HomeExercise />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
