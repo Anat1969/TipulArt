@@ -95,7 +95,9 @@
   border-bottom: 2px solid transparent;
   transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
-.nav-link:hover { color: var(--ink); }
+.nav-link { transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur) var(--ease), transform var(--dur) var(--ease); }
+.nav-link:hover { color: var(--ink); background: color-mix(in srgb, var(--surface-solid) 80%, transparent); border-bottom-color: var(--line-strong); transform: translateY(-1px); box-shadow: var(--shadow-1); }
+.nav-link:active { transform: translateY(0); box-shadow: var(--shadow-press); }
 .nav-link.active { color: var(--ink); border-bottom-color: var(--terracotta); font-weight: 500; }
 
 @media (min-width: 980px) {

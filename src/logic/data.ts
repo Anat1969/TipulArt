@@ -3,6 +3,7 @@ import { supabase, ARTWORK_BUCKET } from './supabase'
 import { compressImage } from './image'
 import type { EtcLevel } from '../content/etc'
 import type { ProcessRecord } from '../studio/engine'
+import type { AiDraft, Computed, Ratings } from '../content/feats'
 
 export type Client = {
   id: string
@@ -162,6 +163,7 @@ export type HomeLink = {
   exercise_id: string | null
   instructions: string
   questions: string[]
+  task: 'free' | 'ppat'
   max_submissions: number
   expires_at: string
   active: boolean
@@ -180,6 +182,7 @@ export type HomeSubmission = {
 }
 
 export type HomePublic = {
+  task: 'free' | 'ppat'
   technique_id: string | null
   exercise_id: string | null
   instructions: string
@@ -197,6 +200,7 @@ export async function createHomeLink(input: {
   exercise_id?: string | null
   instructions: string
   questions: string[]
+  task?: 'free' | 'ppat'
 }): Promise<HomeLink> {
   return check(await supabase.from('tipul_home_links').insert(input).select().single())
 }
@@ -246,10 +250,123 @@ export async function getHomeExercise(token: string): Promise<HomePublic | null>
   return (data as HomePublic | null) ?? null
 }
 
-export async function submitHomeWork(token: string, blob: Blob, process: ProcessRecord, reflections: { q: string; a: string }[]) {
+export async function markSubmission(id: string, session_id: string | null) {
+  check(await supabase.from('tipul_home_submissions').update({ session_id }).eq('id', id))
+}
+
+export async function submitHomeWork(token: string, blob: Blob, process: ProcessRecord | null, reflections: { q: string; a: string }[]) {
   const path = `home/${token}/${crypto.randomUUID()}.jpg`
   const up = await supabase.storage.from(ARTWORK_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false })
   if (up.error) throw new Error(up.error.message)
   const { error } = await supabase.rpc('tipul_home_submit', { p_token: token, p_image_path: path, p_process: process, p_reflections: reflections })
   if (error) throw new Error(error.message)
+}
+
+// ---------- הערכה מובנית (FEATS) ----------
+export type Assessment = {
+  id: string
+  client_id: string
+  session_id: string | null
+  image_path: string
+  instrument: 'feats_ppat' | 'feats_free'
+  mode: 'digital' | 'photo'
+  computed: Computed | null
+  process: ProcessRecord | null
+  ai_draft: AiDraft | null
+  ai_model: string | null
+  ai_at: string | null
+  ratings: Ratings | null
+  notes: string | null
+  status: 'draft' | 'final'
+  created_at: string
+  finalized_at: string | null
+}
+
+async function uploadToOwnFolder(blob: Blob, folder: string): Promise<string> {
+  const { data: u } = await supabase.auth.getUser()
+  const uid = u.user?.id
+  if (!uid) throw new Error('נדרשת כניסה')
+  const path = `${uid}/${folder}/${crypto.randomUUID()}.jpg`
+  const up = await supabase.storage.from(ARTWORK_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false })
+  if (up.error) throw new Error(up.error.message)
+  return path
+}
+
+// הערכה חדשה: מפגש, יצירה ביומן ורשומת הערכה. התמונה נשמרת פעם אחת.
+export async function createAssessment(input: {
+  client_id: string
+  instrument: Assessment['instrument']
+  mode: Assessment['mode']
+  blob?: Blob
+  image_path?: string
+  process: ProcessRecord | null
+  computed: Computed | null
+  session_id?: string | null
+  held_at?: string
+}): Promise<Assessment> {
+  let sessionId = input.session_id ?? null
+  if (!sessionId) {
+    const s = await createSession({
+      client_id: input.client_id,
+      planned_at: input.held_at ?? new Date().toISOString(),
+      duration_min: input.process ? Math.max(1, Math.round(input.process.summary.totalSec / 60)) : null,
+      plan_notes: input.instrument === 'feats_ppat' ? 'הערכה מובנית: אדם קוטף תפוח מעץ (PPAT)' : 'הערכה מובנית: ציור חופשי',
+    })
+    await updateSession(s.id, { held_at: input.held_at ?? new Date().toISOString() })
+    sessionId = s.id
+  }
+  const image_path = input.image_path ?? (await uploadToOwnFolder(input.blob!, sessionId))
+  check(
+    await supabase
+      .from('tipul_artworks')
+      .insert({ session_id: sessionId, storage_path: image_path, caption: input.instrument === 'feats_ppat' ? 'PPAT' : 'הערכה מובנית', process: input.process })
+      .select()
+      .single(),
+  )
+  return check(
+    await supabase
+      .from('tipul_assessments')
+      .insert({
+        client_id: input.client_id,
+        session_id: sessionId,
+        image_path,
+        instrument: input.instrument,
+        mode: input.mode,
+        process: input.process,
+        computed: input.computed,
+      })
+      .select()
+      .single(),
+  )
+}
+
+export async function getAssessment(id: string): Promise<Assessment> {
+  return check(await supabase.from('tipul_assessments').select('*').eq('id', id).single())
+}
+
+export async function listAssessments(clientId: string): Promise<Assessment[]> {
+  return check(await supabase.from('tipul_assessments').select('*').eq('client_id', clientId).order('created_at', { ascending: true }))
+}
+
+export async function listFinalAssessments(): Promise<Pick<Assessment, 'id' | 'ai_draft' | 'ratings' | 'instrument'>[]> {
+  return check(await supabase.from('tipul_assessments').select('id, ai_draft, ratings, instrument').eq('status', 'final'))
+}
+
+export async function requestAiDraft(id: string): Promise<Assessment> {
+  const { data, error } = await supabase.functions.invoke('tipul-analyze', { body: { assessmentId: id } })
+  if (error) {
+    let msg = error.message
+    try {
+      const body = await (error as { context?: Response }).context?.json()
+      if (body?.error) msg = body.error
+    } catch {
+      /* הודעת ברירת מחדל */
+    }
+    throw new Error(msg)
+  }
+  return (data as { assessment: Assessment }).assessment
+}
+
+export async function saveAssessment(id: string, patch: Partial<Pick<Assessment, 'ratings' | 'notes' | 'status' | 'finalized_at'>>) {
+  check(await supabase.from('tipul_assessments').update(patch).eq('id', id))
 }

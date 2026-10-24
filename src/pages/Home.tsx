@@ -41,7 +41,7 @@ const TOOLS = [
   { to: '/plan', title: 'מתכנן מפגש', body: 'קוד מטופל/ת, מטרה וטכניקה. התוכנית נכתבת מתוך התרגיל, עם שאלות לתהליך.' },
   { to: '/studio', title: 'סטודיו', body: 'ציור בפחם, בצבע רטוב ובמריחה. הסטודיו רושם את התהליך ומציג אותו מההתחלה.' },
   { to: '/clients', title: 'תרגול בבית', body: 'קישור אישי למטופל/ת, בלי חשבון. היצירה ותמונת התהליך מגיעות לציר הזמן.' },
-  { to: '/clients', title: 'יומן ותצפית', body: 'תמונת היצירה, נתוני התהליך ותצפית לפי ETC. האבחון נשאר אצל המטפלת.' },
+  { to: '/assessment', title: 'הערכה מובנית', body: 'משימה תקנית ודירוג לפי FEATS: מדידה ממוחשבת, טיוטת דירוג ודירוג המטפלת, עם מדד הסכמה.' },
   { to: '/clients', title: 'ציר זמן', body: 'כל המפגשים של מטופל/ת אחד/ת, עם התמונות והרמות שנצפו.' },
 ]
 
@@ -224,7 +224,7 @@ export default function Home() {
       <section className="chapter" id="tools" ref={setSection(3)}>
         <motion.div className="chapter-copy wide" {...reveal}>
           <div className="label">03 · כלים</div>
-          <h2>שבעה כלים: ידע, התנסות ותיעוד.</h2>
+          <h2>שבעה כלים: ידע, התנסות, הערכה ותיעוד.</h2>
           <div className="tool-grid">
             {TOOLS.map((t, i) => (
               <motion.div

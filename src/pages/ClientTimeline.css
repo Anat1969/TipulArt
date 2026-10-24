@@ -37,7 +37,6 @@
   border: 2px solid var(--terracotta);
   box-shadow: var(--shadow-1);
 }
-.tl-card { display: block; text-decoration: none; transition: transform var(--dur) var(--ease); }
-.tl-card:hover { transform: translateX(-4px); }
+.tl-card { display: block; text-decoration: none; }
 .tl-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .tl-thumbs img { width: 84px; height: 108px; object-fit: cover; box-shadow: var(--shadow-1); }

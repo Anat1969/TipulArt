@@ -24,7 +24,7 @@ const ok = (cond, msg) => {
   }
 }
 
-const db = { tipul_clients: [], tipul_sessions: [], tipul_observations: [], tipul_artworks: [], tipul_practice: [], tipul_home_links: [], tipul_home_submissions: [] }
+const db = { tipul_clients: [], tipul_sessions: [], tipul_observations: [], tipul_artworks: [], tipul_practice: [], tipul_home_links: [], tipul_home_submissions: [], tipul_assessments: [] }
 const requests = []
 let seq = 0
 const uuid = () => `00000000-0000-4000-8000-${String(++seq).padStart(12, '0')}`
@@ -82,6 +82,8 @@ async function handleRest(route) {
     const clientId = eqParam(url, 'client_id')
     if (table === 'tipul_home_submissions' || table === 'tipul_home_links') list = [...list].reverse()
     if (id) list = list.filter((r) => r.id === id)
+    const st = eqParam(url, 'status')
+    if (st) list = list.filter((r) => r.status === st)
     if (clientId) list = list.filter((r) => r.client_id === clientId)
     if (table === 'tipul_clients')
       list = list.map((c) => ({ ...c, tipul_sessions: [{ count: db.tipul_sessions.filter((s) => s.client_id === c.id).length }] }))
@@ -94,6 +96,7 @@ async function handleRest(route) {
       id: uuid(),
       therapist_id: UID,
       created_at: new Date().toISOString(),
+      ...(table === 'tipul_assessments' ? { status: 'draft', ai_draft: null, ratings: null, notes: null } : {}),
       ...(table === 'tipul_home_links' ? { token: `tok${seq}abc`, active: true, max_submissions: 3, expires_at: new Date(Date.now() + 14 * 864e5).toISOString() } : {}),
       ...b,
     }))
@@ -127,6 +130,23 @@ async function mockSupabase(context) {
       return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ id: UID, email: 'anat@example.com', aud: 'authenticated' }) })
     if (p === '/auth/v1/logout') return route.fulfill({ status: 204, body: '' })
     if (p.startsWith('/rest/v1/')) return handleRest(route)
+    if (p === '/functions/v1/tipul-analyze') {
+      requests.push('FN tipul-analyze')
+      const { assessmentId } = JSON.parse(req.postData() || '{}')
+      const a = db.tipul_assessments.find((x) => x.id === assessmentId)
+      if (!a) return route.fulfill({ status: 404, contentType: 'application/json', body: '{"error":"לא נמצא"}' })
+      const ids = ['prominence_of_color','color_fit','implied_energy','space','integration','logic','realism','problem_solving','developmental_level','details','line_quality','person','rotation','perseveration']
+      a.ai_draft = {
+        items: ids.map((id, i) => ({ id, applicable: true, score: i % 6, confidence: 'medium', rationale: 'נימוק לדוגמה שמצביע על מה שנראה.' })),
+        formal_description: 'תיאור צורני לדוגמה.',
+        process_reading: 'קריאת תהליך לדוגמה.',
+        conversation_questions: ['שאלה 1', 'שאלה 2', 'שאלה 3'],
+        limitations: ['מגבלה לדוגמה'],
+      }
+      a.ai_model = 'claude-opus-5-5'
+      a.ai_at = new Date().toISOString()
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ assessment: a }) })
+    }
     if (p.startsWith('/storage/v1/object/sign/tipul-artworks/') && req.method() === 'GET') return route.fulfill({ contentType: 'image/png', body: PNG })
     if (p.startsWith('/storage/v1/object/sign/')) {
       requests.push(`SIGN ${p}`)
@@ -490,6 +510,99 @@ async function draw(page, tool) {
   await mp.waitForTimeout(500)
   await mp.screenshot({ path: OUT + 'studio-mobile.png', fullPage: true })
   await mob.close()
+  await context.close()
+}
+
+// ---------- הערכה מובנית ----------
+{
+  console.log('structured assessment')
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'he-IL' })
+  await mockSupabase(context)
+  await context.addInitScript((s) => localStorage.setItem('tipulart-auth', JSON.stringify(s)), fakeSession)
+  const page = await context.newPage()
+  const errors = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  const clientId = db.tipul_clients[0].id
+
+  const chipShadow = await page.goto(BASE + '/library').then(() => page.locator('.chip').first().evaluate((el) => getComputedStyle(el).boxShadow))
+  ok(chipShadow && chipShadow !== 'none', 'כפתורי סינון עם הצללה')
+
+  await page.goto(BASE + `/clients/${clientId}`)
+  await page.locator('[data-testid=assess-digital]').click()
+  await page.waitForSelector('[data-testid=studio-canvas]')
+  ok(await page.locator('.directive').first().innerText() === 'צייר/י אדם קוטף תפוח מעץ.', 'ההנחיה התקנית מוצגת במדויק')
+  ok(await page.locator('[data-testid^=tool-]').count() === 1 && await page.locator('[data-testid=tool-marker]').count() === 1, 'מצב תקני: טוש בלבד')
+  ok(await page.locator('.swatch').count() === 12, 'מצב תקני: 12 צבעים')
+  const ratio = await page.locator('[data-testid=studio-canvas]').evaluate((c) => c.width / c.height)
+  ok(Math.abs(ratio - 1.5) < 0.01, 'מצב תקני: דף ביחס 3:2')
+  await draw(page, null)
+  await page.locator('.swatch').nth(7).click()
+  await draw(page, null)
+  await page.locator('[data-testid=studio-finish]').click()
+  await page.waitForURL(/\/assessments\//, { timeout: 15000 })
+  await page.waitForSelector('[data-testid=computed]')
+  const a = db.tipul_assessments[0]
+  ok(a && a.instrument === 'feats_ppat' && a.mode === 'digital' && a.process?.summary?.strokes === 2, 'הערכה נוצרה עם נתוני תהליך')
+  ok(a.computed && a.computed.coverage > 0 && a.computed.colorCount >= 1 && a.computed.edgeDensity > 0, `מדידה ממוחשבת: כיסוי ${a.computed?.coverage}%, ${a.computed?.colorCount} גוונים`)
+  ok(db.tipul_artworks.some((w) => w.storage_path === a.image_path), 'היצירה נשמרה גם ביומן המפגש')
+
+  await page.locator('[data-testid=sign]').click()
+  await page.waitForSelector('text=חסר דירוג')
+  ok(true, 'חתימה חסומה עד שכל הסולמות דורגו')
+
+  await page.locator('[data-testid=run-ai]').click()
+  await page.waitForSelector('text=תיאור צורני לדוגמה.')
+  ok(requests.includes('FN tipul-analyze'), 'טיוטת הדירוג מופקת בפונקציית השרת')
+  ok(await page.locator('.score-badge').count() === 14, 'טיוטה לכל 14 הסולמות')
+  const ids = ['prominence_of_color','color_fit','implied_energy','space','integration','logic','realism','problem_solving','developmental_level','details','line_quality','person','rotation','perseveration']
+  for (const [i, id] of ids.entries()) await page.locator(`[data-testid=rate-${id}-${i % 3 === 0 ? (i % 6) : Math.min(5, (i % 6) + 1)}]`).click()
+  await page.screenshot({ path: OUT + 'assessment.png', fullPage: true })
+  await page.locator('[data-testid=sign]').click()
+  await page.waitForSelector('text=נחתם')
+  ok(db.tipul_assessments[0].status === 'final' && Object.keys(db.tipul_assessments[0].ratings).length === 14, `הדירוג נחתם עם 14 סולמות (${db.tipul_assessments[0].status}, ${JSON.stringify(db.tipul_assessments[0].ratings)})`)
+  ok(await page.locator('[data-testid=agreement]').count() === 1, 'מוצגת ההסכמה בהערכה')
+
+  await page.goto(BASE + '/assessment')
+  await page.waitForSelector('[data-testid=reliability]')
+  const kappaText = await page.locator('[data-testid=reliability] .metric').nth(4).locator('b').innerText()
+  ok(kappaText !== '-', `דף המהימנות מחשב קאפה (${kappaText})`)
+  await page.screenshot({ path: OUT + 'assessment-info.png', fullPage: true })
+
+  // צילום של ציור מנייר
+  const shot = await page.screenshot({ clip: { x: 0, y: 0, width: 600, height: 400 } })
+  await page.goto(BASE + `/clients/${clientId}`)
+  await page.locator('[data-testid=assess-photo]').click()
+  await page.locator('[data-testid=photo-file]').setInputFiles({ name: 'paper.png', mimeType: 'image/png', buffer: shot })
+  await page.locator('[data-testid=photo-submit]').click()
+  await page.waitForURL(/\/assessments\//, { timeout: 15000 })
+  await page.waitForSelector('[data-testid=computed]')
+  ok(db.tipul_assessments[1]?.mode === 'photo' && db.tipul_assessments[1].process === null, 'הערכה מצילום נייר, בלי נתוני תהליך')
+
+  // משימה תקנית בבית
+  await page.goto(BASE + `/clients/${clientId}`)
+  await page.locator('[data-testid=home-tech]').selectOption('ppat')
+  ok((await page.locator('[data-testid=home-instructions]').inputValue()) === 'צייר/י אדם קוטף תפוח מעץ.', 'קישור בית עם ההנחיה התקנית')
+  await page.locator('[data-testid=home-create]').click()
+  await page.waitForTimeout(400)
+  const link = db.tipul_home_links.find((l) => l.task === 'ppat')
+  ok(Boolean(link), 'נוצר קישור בית למשימה התקנית')
+  const anon = await browser.newContext({ viewport: { width: 1280, height: 900 } })
+  await mockSupabase(anon)
+  const pp = await anon.newPage()
+  await pp.goto(BASE + `/home/${link.token}`)
+  await pp.waitForSelector('[data-testid=studio-canvas]')
+  ok(await pp.locator('[data-testid^=tool-]').count() === 1, 'בבית: סטודיו במצב תקני')
+  await pp.locator('[data-testid=home-photo]').setInputFiles({ name: 'paper.png', mimeType: 'image/png', buffer: shot })
+  await pp.locator('[data-testid=consent]').check()
+  await pp.locator('[data-testid=send-home]').click()
+  await pp.waitForSelector('text=היצירה נשלחה')
+  ok(db.tipul_home_submissions.some((x) => x.link_id === link.id && x.process === null), 'בבית: צילום מנייר נשלח')
+  await anon.close()
+  await page.reload()
+  await page.locator('[data-testid=to-assessment]').first().click()
+  await page.waitForURL(/\/assessments\//, { timeout: 15000 })
+  ok(db.tipul_assessments.length === 3, 'יצירה מהבית נפתחה כהערכה מובנית')
+  ok(errors.length === 0, `אין שגיאות ${errors.join(' | ')}`)
   await context.close()
 }
 

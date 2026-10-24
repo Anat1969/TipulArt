@@ -14,6 +14,9 @@ const Planner = lazy(() => import('./pages/Planner'))
 const SessionJournal = lazy(() => import('./pages/SessionJournal'))
 const StudioPage = lazy(() => import('./pages/StudioPage'))
 const HomeExercise = lazy(() => import('./pages/HomeExercise'))
+const AssessmentInfo = lazy(() => import('./pages/assessment/AssessmentInfo'))
+const AssessmentNew = lazy(() => import('./pages/assessment/AssessmentNew'))
+const AssessmentDetail = lazy(() => import('./pages/assessment/AssessmentDetail'))
 
 const TITLES: [RegExp, string][] = [
   [/^\/library\/.+/, 'טכניקה'],
@@ -26,6 +29,7 @@ const TITLES: [RegExp, string][] = [
   [/^\/sessions/, 'יומן מפגש'],
   [/^\/login/, 'כניסה'],
   [/^\/studio/, 'סטודיו'],
+  [/^\/assessment/, 'הערכה מובנית'],
   [/^\/home\//, 'תרגול בבית'],
 ]
 
@@ -64,6 +68,9 @@ export default function App() {
             <Route path="/sessions/:id" element={<SessionJournal />} />
             <Route path="/studio" element={<StudioPage />} />
             <Route path="/home/:token" element={<HomeExercise />} />
+            <Route path="/assessment" element={<AssessmentInfo />} />
+            <Route path="/assessment/new" element={<AssessmentNew />} />
+            <Route path="/assessments/:id" element={<AssessmentDetail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

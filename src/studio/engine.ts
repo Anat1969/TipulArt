@@ -1,5 +1,5 @@
 // מנוע הסטודיו: ציור החומרים, הקלטת התהליך ושחזור. אותו מנוע משמש לציור ולהצגה חוזרת.
-export type Tool = 'charcoal' | 'wet' | 'smudge' | 'eraser'
+export type Tool = 'charcoal' | 'wet' | 'smudge' | 'eraser' | 'marker'
 export type Point = [number, number, number] // x, y, ms מתחילת הקו
 export type Stroke = { tool: Tool; color: string; size: number; t0: number; pts: Point[] }
 
@@ -23,12 +23,12 @@ export const SIZES = [
   { id: 40, label: 'רחב' },
 ]
 
-export function clearPaper(ctx: CanvasRenderingContext2D) {
+export function clearPaper(ctx: CanvasRenderingContext2D, paper = PAPER) {
   ctx.save()
   ctx.globalCompositeOperation = 'source-over'
   ctx.globalAlpha = 1
-  ctx.fillStyle = PAPER
-  ctx.fillRect(0, 0, W, H)
+  ctx.fillStyle = paper
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
   ctx.restore()
 }
 
@@ -59,6 +59,17 @@ export function drawSegment(ctx: CanvasRenderingContext2D, s: Stroke, a: Point, 
       ctx.lineTo(b[0] + j, b[1] - j)
       ctx.stroke()
     }
+  } else if (s.tool === 'marker') {
+    // טוש: קו אטום ואחיד, כמו בערכת הטושים של המשימה התקנית
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.strokeStyle = s.color
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+    ctx.lineWidth = Math.max(2, s.size * 0.5)
+    ctx.beginPath()
+    ctx.moveTo(a[0], a[1])
+    ctx.lineTo(b[0], b[1])
+    ctx.stroke()
   } else if (s.tool === 'wet') {
     const [r, g, bl] = hexToRgb(s.color)
     const step = Math.max(2, s.size * 0.25)
@@ -127,8 +138,13 @@ export type ProcessSummary = {
 
 export type ProcessRecord = { v: 1; w: number; h: number; openedAt: number; finishedAt: number; strokes: Stroke[]; summary: ProcessSummary }
 
+function paperOf(ctx: CanvasRenderingContext2D) {
+  const d = ctx.getImageData(1, 1, 1, 1).data
+  return `#${[d[0], d[1], d[2]].map((v) => v.toString(16).padStart(2, '0')).join('')}`
+}
+
 export function summarize(strokes: Stroke[], openedAt: number, finishedAt: number, ctx: CanvasRenderingContext2D | null): ProcessSummary {
-  const toolSec: Record<Tool, number> = { charcoal: 0, wet: 0, smudge: 0, eraser: 0 }
+  const toolSec: Record<Tool, number> = { charcoal: 0, wet: 0, smudge: 0, eraser: 0, marker: 0 }
   let active = 0
   let pauses = 0
   let longest = 0
@@ -137,7 +153,7 @@ export function summarize(strokes: Stroke[], openedAt: number, finishedAt: numbe
     const d = s.pts.length ? s.pts[s.pts.length - 1][2] : 0
     active += d
     toolSec[s.tool] += d / 1000
-    if (s.tool === 'charcoal' || s.tool === 'wet') colors.add(s.color)
+    if (s.tool === 'charcoal' || s.tool === 'wet' || s.tool === 'marker') colors.add(s.color)
     if (i > 0) {
       const prev = strokes[i - 1]
       const prevEnd = prev.t0 + (prev.pts.length ? prev.pts[prev.pts.length - 1][2] : 0)
@@ -149,8 +165,10 @@ export function summarize(strokes: Stroke[], openedAt: number, finishedAt: numbe
   let coverage = 0
   let centerShare = 0
   if (ctx) {
+    const W = ctx.canvas.width
+    const H = ctx.canvas.height
     const img = ctx.getImageData(0, 0, W, H).data
-    const [pr, pg, pb] = hexToRgb(PAPER)
+    const [pr, pg, pb] = hexToRgb(paperOf(ctx))
     let marked = 0
     let center = 0
     let samples = 0

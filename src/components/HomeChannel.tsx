@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { TECHNIQUES, techniqueById } from '../content/techniques'
 import { ProcessView } from '../studio/ProcessView'
+import { analyzeImage } from '../studio/analyzeImage'
+import { PPAT } from '../content/feats'
 import {
   closeHomeLink,
   createHomeLink,
@@ -10,6 +12,8 @@ import {
   listHomeSubmissions,
   signedUrls,
   submissionToSession,
+  createAssessment,
+  markSubmission,
   type HomeLink,
   type HomeSubmission,
 } from '../logic/data'
@@ -44,6 +48,11 @@ export function HomeChannel({ clientId }: { clientId: string }) {
 
   const pickTech = (id: string) => {
     setTechId(id)
+    if (id === 'ppat') {
+      setInstructions(PPAT.directive)
+      setQuestions('')
+      return
+    }
     const t = techniqueById(id)
     const ex = t?.exercises[0]
     if (ex) setInstructions(`${ex.instructions}\nחומרים: ${ex.materials.join(', ')}. משך: כ-${ex.durationMin} דקות.`)
@@ -57,7 +66,8 @@ export function HomeChannel({ clientId }: { clientId: string }) {
       const t = techniqueById(techId)
       const link = await createHomeLink({
         client_id: clientId,
-        technique_id: techId || null,
+        task: techId === 'ppat' ? 'ppat' : 'free',
+        technique_id: techId && techId !== 'ppat' ? techId : null,
         exercise_id: t?.exercises[0]?.id ?? null,
         instructions: instructions.trim(),
         questions: questions.split('\n').map((q) => q.trim()).filter(Boolean).slice(0, 5),
@@ -77,6 +87,22 @@ export function HomeChannel({ clientId }: { clientId: string }) {
     }
     setCopied(token)
     setTimeout(() => setCopied(''), 2000)
+  }
+
+  const toAssessment = async (sub: HomeSubmission) => {
+    const link = links.find((l) => l.id === sub.link_id)
+    const computed = urls[sub.image_path] ? await analyzeImage(urls[sub.image_path]).catch(() => null) : null
+    const a = await createAssessment({
+      client_id: sub.client_id,
+      instrument: link?.task === 'ppat' ? 'feats_ppat' : 'feats_free',
+      mode: sub.process ? 'digital' : 'photo',
+      image_path: sub.image_path,
+      process: sub.process,
+      computed,
+      held_at: sub.created_at,
+    })
+    await markSubmission(sub.id, a.session_id)
+    nav(`/assessments/${a.id}`)
   }
 
   const toSession = async (sub: HomeSubmission) => {
@@ -101,6 +127,7 @@ export function HomeChannel({ clientId }: { clientId: string }) {
             <span>טכניקה</span>
             <select className="select" value={techId} onChange={(e) => pickTech(e.target.value)} data-testid="home-tech">
               <option value="">בחירה</option>
+              <option value="ppat">הערכה מובנית: אדם קוטף תפוח מעץ (PPAT)</option>
               {TECHNIQUES.map((t) => <option key={t.id} value={t.id}>{t.nameHe}</option>)}
             </select>
           </label>
@@ -122,7 +149,7 @@ export function HomeChannel({ clientId }: { clientId: string }) {
           {links.map((l) => (
             <div key={l.id} style={{ borderBottom: '1px solid var(--line)', paddingBottom: 8, display: 'grid', gap: 6 }}>
               <div className="row" style={{ justifyContent: 'space-between' }}>
-                <span>{techniqueById(l.technique_id)?.nameHe ?? 'תרגיל חופשי'}</span>
+                <span>{l.task === 'ppat' ? 'הערכה מובנית PPAT' : techniqueById(l.technique_id)?.nameHe ?? 'תרגיל חופשי'}</span>
                 <span className="label">
                   {isOpen(l) ? `פתוח עד ${new Date(l.expires_at).toLocaleDateString('he-IL')}` : 'סגור'} · {subs.filter((s) => s.link_id === l.id).length} יצירות
                 </span>
@@ -153,9 +180,14 @@ export function HomeChannel({ clientId }: { clientId: string }) {
                 {s.session_id ? (
                   <Link className="btn btn-sm" to={`/sessions/${s.session_id}`}>ליומן המפגש</Link>
                 ) : (
-                  <button type="button" className="btn btn-sm btn-primary" onClick={() => toSession(s)} data-testid="to-session">
-                    פתיחה כמפגש ותצפית
-                  </button>
+                  <span className="row">
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => toAssessment(s)} data-testid="to-assessment">
+                      הערכה מובנית
+                    </button>
+                    <button type="button" className="btn btn-sm" onClick={() => toSession(s)} data-testid="to-session">
+                      מפגש ותצפית
+                    </button>
+                  </span>
                 )}
               </div>
               <div className="grid grid-2">
