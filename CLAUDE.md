@@ -67,6 +67,7 @@
 - הערכה מובנית: `tipul_assessments` (computed, process, ai_draft, ratings, status). טיוטת הדירוג בפונקציה `tipul-analyze` (Claude, `ANTHROPIC_API_KEY` המשותף, JWT של המטפלת, עד 40 בשעה). הקוד שלה ב-`supabase/functions/tipul-analyze`.
 - הסביבה לא מגיעה ל-supabase.co, ולכן את `tipul-analyze` אי אפשר לבדוק מכאן מול השרת. הבדיקה האוטומטית מדמה אותה.
 - בדיקות: הרכיב `<ai-menu>` נטען מ-vercel.app שחסום בסביבה. להריץ עם `AI_MENU_JS=<נתיב ל-public/ai-menu.js מריפו AppOfApp-GH>`.
+- 24.10.2026: הפצת הסקיל ל-73 ריפו מילאה את מכסת 100 הפריסות היומית של Vercel. פריסות של TipulArt נדחו (402) ותוזמנו מחדש. הפצות רחבות: לפזר על פני ימים.
 - `uipro init` נחסם במנגנון ההרשאות של הסביבה. אם נדרש, להריץ מקומית.
 
 ## A&I logo button
