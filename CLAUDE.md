@@ -1,7 +1,7 @@
 # CLAUDE.md: כללי העבודה במאגר TipulArt
 
 קרא/י קודם את `README.md` ואת `docs/01-spec.md`. אלה מקור האמת למוצר.
-ההוראות הקבועות של ענת לכל אפליקציה מרוכזות בסקיל המאוחד `.claude/skills/anat-app-builder/SKILL.md`. להפעיל אותו בתחילת כל עבודה. הוא גובר על סקילי בנייה ישנים.
+ההוראות הקבועות של ענת לכל אפליקציה נמצאות במקור אחד, https://github.com/Anat1969/Claude-GH: ב-CLAUDE.md ובשני הסקילים, anat-app-builder ו-anat-design-language. העותק כאן הוא גיבוי. הקנוני גובר.
 
 ## שפה וממשק
 
